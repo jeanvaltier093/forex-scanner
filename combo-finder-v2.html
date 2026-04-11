@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Combo Finder V2</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#080c14;--bg2:#0d1320;--bg3:#111827;--border:#1e2d45;--accent:#00d4ff;--buy:#00ff88;--sell:#ff4466;--text:#e8edf5;--muted:#5a7090;--gold:#ffd700;--purple:#a855f7}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:20px}
+.app{max-width:1200px;margin:0 auto}
+.header{display:flex;align-items:center;gap:16px;padding:20px 0;border-bottom:1px solid var(--border);margin-bottom:24px}
+.logo-icon{font-size:28px;color:var(--gold)}
+.logo-text{font-size:22px;font-weight:800;letter-spacing:3px}
+.accent{color:var(--gold)}
+.subtitle{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:4px}
+.info{background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.2);border-radius:8px;padding:16px;margin-bottom:24px;font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);line-height:1.8}
+.info strong{color:var(--gold)}
+.setup{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px}
+.setup h2{font-size:14px;font-weight:800;letter-spacing:2px;color:var(--gold);margin-bottom:16px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.ig{display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px}
+.ig label{font-size:10px;color:var(--muted);letter-spacing:2px;font-family:'Space Mono',monospace}
+.ig input{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:6px;font-family:'Space Mono',monospace;font-size:13px;outline:none;width:100%}
+.ig input:focus{border-color:var(--gold)}
+.btn{padding:12px 24px;border:none;border-radius:6px;cursor:pointer;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:2px;white-space:nowrap;transition:all .2s}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-run{background:var(--gold);color:var(--bg)}
+.btn-dl{background:var(--buy);color:var(--bg);display:none}
+.prog-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px;display:none}
+.prog-label{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:8px}
+.prog-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.prog-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .3s}
+.prog-text{font-family:'Space Mono',monospace;font-size:11px;color:var(--gold)}
+.results{display:none}
+.sec{font-family:'Space Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;margin:24px 0 12px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:24px}
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+.sc-val{font-family:'Space Mono',monospace;font-size:20px;font-weight:700;margin-bottom:4px}
+.sc.up .sc-val{color:var(--buy)}.sc.down .sc-val{color:var(--sell)}.sc.n .sc-val{color:var(--gold)}
+.sc-label{font-size:9px;color:var(--muted);letter-spacing:2px}
+.combo-table{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px}
+.th{display:grid;grid-template-columns:.3fr 1fr 1fr .7fr .7fr .7fr .7fr .7fr;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:9px;color:var(--muted);letter-spacing:2px;font-family:'Space Mono',monospace}
+.tr{border-bottom:1px solid var(--border)}
+.tr:last-child{border-bottom:none}
+.tr-main{display:grid;grid-template-columns:.3fr 1fr 1fr .7fr .7fr .7fr .7fr .7fr;padding:12px 16px;font-size:11px;font-family:'Space Mono',monospace;align-items:center;cursor:pointer;transition:background .2s}
+.tr-main:hover{background:var(--bg3)}
+.tr-detail{display:none;padding:16px;background:rgba(0,0,0,.3);border-top:1px solid var(--border)}
+.tr-detail.open{display:block}
+.badge{padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700}
+.badge.s{background:rgba(0,255,136,.15);color:var(--buy);border:1px solid rgba(0,255,136,.4)}
+.badge.g{background:rgba(255,215,0,.15);color:var(--gold);border:1px solid rgba(255,215,0,.4)}
+.badge.b{background:rgba(255,68,102,.15);color:var(--sell);border:1px solid rgba(255,68,102,.4)}
+.ind-tag{display:inline-block;padding:3px 8px;background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);border-radius:3px;font-family:'Space Mono',monospace;font-size:10px;color:var(--purple);margin:2px}
+.trade-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:4px;margin-top:8px}
+.tg{background:var(--bg3);border-radius:4px;padding:6px 8px;font-family:'Space Mono',monospace;font-size:10px}
+.tg.w{border-left:2px solid var(--buy)}.tg.l{border-left:2px solid var(--sell)}
+.sig-box{background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.25);border-radius:8px;padding:16px;margin-bottom:24px}
+.sig-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.sig-item:last-child{border-bottom:none}
+.warn{background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:8px;padding:16px;margin-bottom:24px;font-family:'Space Mono',monospace;font-size:11px;color:var(--accent);line-height:1.8}
+@media(max-width:768px){
+  .th,.tr-main{grid-template-columns:.3fr 1fr 1fr .7fr .7fr .7fr;font-size:10px}
+  .th span:nth-child(n+7),.tr-main span:nth-child(n+7){display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <span class="logo-icon">◈</span>
+    <div>
+      <div class="logo-text">COMBO<span class="accent">FINDER</span> V2</div>
+      <div class="subtitle">BACKTEST PAR SCORE MAJORITAIRE — TREND + COUNTER-TREND</div>
+    </div>
+  </div>
+
+  <div class="info">
+    <strong>Approche corrigée et réaliste :</strong><br>
+    → Teste <strong>12 configurations de score</strong> (ex: 3/6, 4/6, 5/6, 6/6 indicateurs alignés)<br>
+    → Pour chaque configuration : teste les deux directions (<strong>TREND et COUNTER-TREND</strong>)<br>
+    → Simule chaque trade avec le vrai TP/SL sur les bougies suivantes<br>
+    → Ne garde que les configs avec <strong>win rate ≥ 55% ET ≥ 5 trades</strong><br>
+    → Affiche les <strong>signaux actuels</strong> basés sur les configs gagnantes
+  </div>
+
+  <div class="setup">
+    <h2>⚙️ CONFIGURATION</h2>
+    <div class="row">
+      <div class="ig">
+        <label>CLÉ API TWELVE DATA</label>
+        <input type="text" id="apiKey" placeholder="Votre clé API..."/>
+      </div>
+      <div class="ig" style="max-width:130px">
+        <label>BOUGIES (4H)</label>
+        <input type="number" id="candleCount" value="500" min="300" max="800"/>
+      </div>
+      <div class="ig" style="max-width:120px">
+        <label>SEUIL PIPS</label>
+        <input type="number" id="pipThreshold" value="80" min="40" max="200"/>
+      </div>
+      <div class="ig" style="max-width:120px">
+        <label>MIN TRADES</label>
+        <input type="number" id="minTrades" value="5" min="3" max="20"/>
+      </div>
+      <button class="btn btn-run" id="runBtn" onclick="run()">🔍 ANALYSER</button>
+      <button class="btn btn-dl" id="dlBtn" onclick="download()">⬇ CSV</button>
+    </div>
+  </div>
+
+  <div class="prog-box" id="progBox">
+    <div class="prog-label" id="progLabel">Initialisation...</div>
+    <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    <div class="prog-text" id="progText"></div>
+  </div>
+
+  <div class="results" id="results"></div>
+</div>
+<script>
+const PAIRS=['EUR/USD','GBP/USD','USD/JPY','USD/CHF','AUD/USD','NZD/USD','USD/CAD','EUR/GBP','EUR/JPY','GBP/JPY','EUR/CHF','AUD/JPY'];
+const FLAGS={'EUR/USD':'🇪🇺🇺🇸','GBP/USD':'🇬🇧🇺🇸','USD/JPY':'🇺🇸🇯🇵','USD/CHF':'🇺🇸🇨🇭','AUD/USD':'🇦🇺🇺🇸','NZD/USD':'🇳🇿🇺🇸','USD/CAD':'🇺🇸🇨🇦','EUR/GBP':'🇪🇺🇬🇧','EUR/JPY':'🇪🇺🇯🇵','GBP/JPY':'🇬🇧🇯🇵','EUR/CHF':'🇪🇺🇨🇭','AUD/JPY':'🇦🇺🇯🇵'};
+let REPORT=null;
+
+// ─── 6 INDICATEURS — chacun retourne +1 BUY ou +1 SELL ──────────────────────
+function calcEMA(d,p){if(d.length<=p)return Array(d.length).fill(d[d.length-1]);const k=2/(p+1);let e=d.slice(0,p).reduce((a,b)=>a+b,0)/p;const r=[e];for(let i=p;i<d.length;i++){e=d[i]*k+e*(1-k);r.push(e)}return r}
+
+function score_EMA_CROSS(c){
+  if(c.length<201)return 0;
+  const e50=calcEMA(c,50),e200=calcEMA(c,200);
+  return e50[e50.length-1]>e200[e200.length-1]?1:-1; // +1=BUY trend, -1=SELL trend
+}
+function score_PRICE_EMA50(c){
+  if(c.length<51)return 0;
+  const e50=calcEMA(c,50);
+  return c[c.length-1]>e50[e50.length-1]?1:-1;
+}
+function score_OBV(c){
+  const obv=[0];for(let i=1;i<c.length;i++){const body=Math.abs(c[i]-c[i-1])*10000;obv.push(obv[i-1]+(c[i]>c[i-1]?body:-body))}
+  const last=obv[obv.length-1],prev=obv[Math.max(0,obv.length-11)];
+  return last>prev?1:-1;
+}
+function score_STOCH(h,l,c){
+  const kp=14,dp=3;
+  const k=[];for(let i=kp-1;i<c.length;i++){const hh=Math.max(...h.slice(i-kp+1,i+1)),ll=Math.min(...l.slice(i-kp+1,i+1));k.push(hh===ll?50:((c[i]-ll)/(hh-ll))*100)}
+  const d=[];for(let i=dp-1;i<k.length;i++)d.push(k.slice(i-dp+1,i+1).reduce((a,b)=>a+b,0)/dp);
+  return k[k.length-1]>d[d.length-1]?1:-1;
+}
+function score_PSAR(h,l,c){
+  const af0=0.02,afMax=0.2;let bull=true,sar=l[0]||0,ep=h[0]||0,af=af0;
+  for(let i=1;i<c.length;i++){sar=sar+af*(ep-sar);if(bull){if(h[i]>ep){ep=h[i];af=Math.min(af+af0,afMax)}if(c[i]<sar){bull=false;sar=ep;ep=l[i];af=af0}}else{if(l[i]<ep){ep=l[i];af=Math.min(af+af0,afMax)}if(c[i]>sar){bull=true;sar=ep;ep=h[i];af=af0}}}
+  return bull?1:-1;
+}
+function score_ADX(h,l,c){
+  const p=14,tr=[],pm=[],mm=[];
+  for(let i=1;i<c.length;i++){tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])));const u=h[i]-h[i-1],dv=l[i-1]-l[i];pm.push(u>dv&&u>0?u:0);mm.push(dv>u&&dv>0?dv:0)}
+  const sTR=tr.slice(-p).reduce((a,b)=>a+b,0)||1;
+  return pm.slice(-p).reduce((a,b)=>a+b,0)>mm.slice(-p).reduce((a,b)=>a+b,0)?1:-1;
+}
+
+const IND_NAMES=['EMA Cross','Prix vs EMA50','OBV','Stoch Cross','Parabolic SAR','ADX Direction'];
+
+function getScores(c,h,l){
+  return[score_EMA_CROSS(c),score_PRICE_EMA50(c),score_OBV(c),score_STOCH(h,l,c),score_PSAR(h,l,c),score_ADX(h,l,c)];
+}
+
+function getATR(h,l,c,p=14){
+  const tr=[];for(let i=1;i<c.length;i++)tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])));
+  return tr.slice(-p).reduce((a,b)=>a+b,0)/Math.min(p,tr.length)||0.001;
+}
+
+function simTrade(dir,entry,tp,sl,fH,fL,max=24){
+  for(let i=0;i<Math.min(max,fH.length);i++){
+    if(dir==='BUY'){if(fH[i]>=tp)return'WIN';if(fL[i]<=sl)return'LOSS';}
+    else{if(fL[i]<=tp)return'WIN';if(fH[i]>=sl)return'LOSS';}
+  }
+  return null;
+}
+
+async function run(){
+  const apiKey=document.getElementById('apiKey').value.trim();
+  const candleCount=parseInt(document.getElementById('candleCount').value)||500;
+  const pipThreshold=parseInt(document.getElementById('pipThreshold').value)||80;
+  const minTrades=parseInt(document.getElementById('minTrades').value)||5;
+  if(!apiKey){alert('Clé API manquante');return}
+
+  document.getElementById('runBtn').disabled=true;
+  document.getElementById('dlBtn').style.display='none';
+  document.getElementById('progBox').style.display='block';
+  document.getElementById('results').style.display='none';
+  document.getElementById('results').innerHTML='';
+
+  // Téléchargement des données
+  const allData=[];
+  for(let pi=0;pi<PAIRS.length;pi++){
+    const pair=PAIRS[pi];
+    setProg(Math.round(pi/PAIRS.length*35),'Téléchargement '+pair,`${pi+1}/${PAIRS.length}`);
+    try{
+      const r=await fetch(`https://api.twelvedata.com/time_series?symbol=${pair}&interval=4h&outputsize=${candleCount}&apikey=${apiKey}`);
+      const d=await r.json();
+      if(!d.values||d.status==='error'){await sleep(8000);continue}
+      const cv=d.values.reverse();
+      allData.push({pair,candles:cv,
+        closes:cv.map(c=>parseFloat(c.close)),
+        highs:cv.map(c=>parseFloat(c.high)),
+        lows:cv.map(c=>parseFloat(c.low)),
+        isJPY:pair.includes('JPY')
+      });
+    }catch(e){console.error(pair,e)}
+    await sleep(8000);
+  }
+
+  setProg(40,'Calcul des scores indicateurs sur tout l\'historique...','');
+
+  // Calcul des snapshots
+  const snapshots=[];
+  for(const pd of allData){
+    const{pair,closes,highs,lows,candles,isJPY}=pd;
+    for(let i=210;i<closes.length-25;i++){
+      const c=closes.slice(0,i+1),h=highs.slice(0,i+1),l=lows.slice(0,i+1);
+      const scores=getScores(c,h,l);
+      const atr=getATR(h,l,c);
+      const buyCount=scores.filter(s=>s===1).length; // combien d'indicateurs disent BUY (trend)
+      snapshots.push({pair,idx:i,date:candles[i].datetime,closes,highs,lows,scores,buyCount,sellCount:6-buyCount,atr,price:closes[i],isJPY});
+    }
+  }
+
+  setProg(55,'Backtest de toutes les configurations de score...','');
+
+  // Tester chaque niveau de score — TREND (majorité BUY = BUY) et COUNTER-TREND (majorité SELL = BUY)
+  const configs=[];
+  // Score minimum requis pour déclencher un signal: 3,4,5,6 parmi 6
+  for(const scoreMin of [3,4,5,6]){
+    for(const mode of ['TREND','COUNTER-TREND']){
+      // Mode TREND: si scoreMin indicateurs disent BUY → on prend BUY
+      // Mode COUNTER: si scoreMin indicateurs disent SELL → on prend BUY (retournement)
+      const buyTrades=[],sellTrades=[];
+
+      for(const snap of snapshots){
+        const pipDiv=snap.isJPY?0.01:0.0001;
+        const sl=snap.atr*1.5,tp=sl*1.5;
+        const fH=snap.highs.slice(snap.idx+1,snap.idx+25);
+        const fL=snap.lows.slice(snap.idx+1,snap.idx+25);
+
+        let dir=null;
+        if(mode==='TREND'){
+          if(snap.buyCount>=scoreMin)dir='BUY';
+          else if(snap.sellCount>=scoreMin)dir='SELL';
+        }else{
+          // Counter-trend: majorité SELL → BUY, majorité BUY → SELL
+          if(snap.sellCount>=scoreMin)dir='BUY';
+          else if(snap.buyCount>=scoreMin)dir='SELL';
+        }
+        if(!dir)continue;
+
+        const entry=snap.price;
+        const tpPrice=dir==='BUY'?entry+tp:entry-tp;
+        const slPrice=dir==='BUY'?entry-sl:entry+sl;
+        const result=simTrade(dir,entry,tpPrice,slPrice,fH,fL,24);
+        if(!result)continue;
+
+        const pips=dir==='BUY'
+          ?(result==='WIN'?tp/pipDiv:-sl/pipDiv)
+          :(result==='WIN'?tp/pipDiv:-sl/pipDiv);
+        const trade={pair:snap.pair,date:snap.date,dir,result,pips:parseFloat(pips.toFixed(1)),entry};
+        if(dir==='BUY')buyTrades.push(trade);
+        else sellTrades.push(trade);
+      }
+
+      // Évaluer BUY et SELL séparément
+      for(const[trades,dir] of[[buyTrades,'BUY'],[sellTrades,'SELL']]){
+        if(trades.length<minTrades)continue;
+        const wins=trades.filter(t=>t.result==='WIN').length;
+        const wr=Math.round(wins/trades.length*100);
+        const totalPips=parseFloat(trades.reduce((s,t)=>s+t.pips,0).toFixed(1));
+        const avgPips=parseFloat((totalPips/trades.length).toFixed(1));
+        configs.push({mode,scoreMin,dir,trades,total:trades.length,wins,wr,totalPips,avgPips,
+          label:`${mode} | ≥${scoreMin}/6 → ${dir}`});
+      }
+    }
+    await sleep(0);
+  }
+
+  setProg(85,'Filtrage et tri des configurations...','');
+
+  const winning=configs.filter(c=>c.wr>=55).sort((a,b)=>b.wr-a.wr||b.total-a.total);
+  const allSorted=configs.sort((a,b)=>b.wr-a.wr);
+
+  // Signaux actuels
+  const currentSignals=[];
+  for(const pd of allData){
+    const{pair,closes,highs,lows,isJPY}=pd;
+    if(closes.length<215)continue;
+    const c=closes,h=highs,l=lows;
+    const scores=getScores(c,h,l);
+    const buyCount=scores.filter(s=>s===1).length;
+    const sellCount=6-buyCount;
+    const activeInds=IND_NAMES.filter((_,i)=>scores[i]===1);
+    const bearInds=IND_NAMES.filter((_,i)=>scores[i]===-1);
+
+    // Chercher si une config gagnante se déclenche
+    for(const cfg of winning.slice(0,10)){
+      let fires=false;
+      if(cfg.mode==='TREND'&&cfg.dir==='BUY'&&buyCount>=cfg.scoreMin)fires=true;
+      if(cfg.mode==='TREND'&&cfg.dir==='SELL'&&sellCount>=cfg.scoreMin)fires=true;
+      if(cfg.mode==='COUNTER-TREND'&&cfg.dir==='BUY'&&sellCount>=cfg.scoreMin)fires=true;
+      if(cfg.mode==='COUNTER-TREND'&&cfg.dir==='SELL'&&buyCount>=cfg.scoreMin)fires=true;
+      if(fires&&!currentSignals.find(s=>s.pair===pair&&s.dir===cfg.dir)){
+        currentSignals.push({pair,dir:cfg.dir,wr:cfg.wr,total:cfg.total,mode:cfg.mode,scoreMin:cfg.scoreMin,activeInds:cfg.dir==='BUY'?activeInds:bearInds,buyCount,sellCount});
+      }
+    }
+  }
+
+  setProg(100,'Terminé !',`${winning.length} configurations gagnantes | ${currentSignals.length} signaux actuels`);
+  REPORT={winning,allSorted,currentSignals,pipThreshold,minTrades,generatedAt:new Date().toISOString()};
+  renderResults(REPORT);
+  document.getElementById('runBtn').disabled=false;
+  document.getElementById('dlBtn').style.display='block';
+}
+
+function renderResults({winning,allSorted,currentSignals,pipThreshold,minTrades}){
+  const box=document.getElementById('results');
+  box.style.display='block';
+  const best=winning[0];
+  const total65=winning.filter(c=>c.wr>=65).length;
+  const total70=winning.filter(c=>c.wr>=70).length;
+
+  box.innerHTML=`
+    <div class="sec">📊 RÉSULTATS — ${allSorted.length} CONFIGURATIONS TESTÉES</div>
+    <div class="stats-grid">
+      <div class="sc n"><div class="sc-val">${allSorted.length}</div><div class="sc-label">CONFIGS TESTÉES</div></div>
+      <div class="sc up"><div class="sc-val">${winning.length}</div><div class="sc-label">≥ 55% WIN RATE</div></div>
+      <div class="sc up"><div class="sc-val">${total65}</div><div class="sc-label">≥ 65% WIN RATE</div></div>
+      <div class="sc up"><div class="sc-val">${total70}</div><div class="sc-label">≥ 70% WIN RATE</div></div>
+      <div class="sc n"><div class="sc-val">${best?best.wr+'%':'—'}</div><div class="sc-label">MEILLEUR</div></div>
+      <div class="sc n"><div class="sc-val">${currentSignals.length}</div><div class="sc-label">SIGNAUX ACTUELS</div></div>
+    </div>
+
+    ${currentSignals.length>0?`
+    <div class="sec">🚨 SIGNAUX ACTUELS — CONFIGS GAGNANTES QUI SE DÉCLENCHENT MAINTENANT</div>
+    <div class="sig-box">
+      ${currentSignals.map(s=>`
+        <div class="sig-item">
+          <span style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700">${FLAGS[s.pair]||''} ${s.pair}</span>
+          <span style="padding:4px 12px;border-radius:4px;font-family:'Space Mono',monospace;font-weight:700;background:${s.dir==='BUY'?'rgba(0,255,136,.15)':'rgba(255,68,102,.15)'};color:${s.dir==='BUY'?'var(--buy)':'var(--sell)'};border:1px solid ${s.dir==='BUY'?'var(--buy)':'var(--sell)'}">${s.dir==='BUY'?'▲ BUY':'▼ SELL'}</span>
+          <span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--gold)">${s.wr}% win rate | ${s.total} trades</span>
+          <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted)">${s.mode} | Score ${s.buyCount}/6 BUY — ${s.sellCount}/6 SELL</span>
+        </div>`).join('')}
+    </div>`:`
+    <div class="warn">
+      ℹ️ Aucun signal actuel — aucune configuration gagnante ne se déclenche maintenant.<br>
+      C'est normal et positif — l'outil est sélectif et attend les vraies opportunités.
+    </div>`}
+
+    <div class="sec">🏆 TOUTES LES CONFIGURATIONS — TRIÉES PAR WIN RATE</div>
+    <div class="combo-table">
+      <div class="th"><span>#</span><span>CONFIGURATION</span><span>MODE</span><span>WIN RATE</span><span>DIR.</span><span>TRADES</span><span>PIPS TOT.</span><span>QUALITÉ</span></div>
+      ${allSorted.map((r,i)=>`
+        <div class="tr" id="tr${i}">
+          <div class="tr-main" onclick="tog(${i})">
+            <span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--gold)">${i+1}</span>
+            <span style="font-family:'Space Mono',monospace;font-size:11px">≥ ${r.scoreMin}/6 indicateurs</span>
+            <span style="font-family:'Space Mono',monospace;font-size:10px;color:${r.mode==='TREND'?'var(--accent)':'var(--purple)'}">${r.mode}</span>
+            <span style="font-family:'Space Mono',monospace;font-weight:700;color:${r.wr>=70?'var(--buy)':r.wr>=60?'var(--gold)':r.wr>=55?'var(--accent)':'var(--muted)'}">${r.wr}%</span>
+            <span style="font-family:'Space Mono',monospace;color:${r.dir==='BUY'?'var(--buy)':'var(--sell)'}">${r.dir}</span>
+            <span style="font-family:'Space Mono',monospace">${r.wins}/${r.total}</span>
+            <span style="font-family:'Space Mono',monospace;color:${r.totalPips>=0?'var(--buy)':'var(--sell)'}">${r.totalPips>=0?'+':''}${r.totalPips}</span>
+            <span class="badge ${r.wr>=65?'s':r.wr>=55?'g':'b'}">${r.wr>=65?'FORT':r.wr>=55?'BON':'FAIBLE'}</span>
+          </div>
+          <div class="tr-detail" id="td${i}">
+            <div style="font-family:'Space Mono',monospace;font-size:11px;margin-bottom:8px;color:var(--accent)">
+              ${r.mode==='TREND'?`Signal déclenché quand ≥${r.scoreMin} indicateurs sur 6 pointent dans le sens du trade`:`Signal déclenché quand ≥${r.scoreMin} indicateurs sur 6 pointent dans le sens OPPOSÉ (retournement)`}
+            </div>
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:8px">
+              Pips moyen : ${r.avgPips>=0?'+':''}${r.avgPips} | Total pips : ${r.totalPips>=0?'+':''}${r.totalPips}
+            </div>
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--accent);margin-bottom:6px">Les ${Math.min(r.trades.length,30)} derniers trades :</div>
+            <div class="trade-grid">
+              ${r.trades.slice(-30).map(t=>`<div class="tg ${t.result==='WIN'?'w':'l'}">
+                <div style="color:var(--muted);font-size:9px">${FLAGS[t.pair]||''} ${t.pair}</div>
+                <div style="color:${t.result==='WIN'?'var(--buy)':'var(--sell)'}">
+                  ${t.result==='WIN'?'✅':'❌'} ${t.pips>=0?'+':''}${t.pips}p
+                </div>
+                <div style="color:var(--muted);font-size:9px">${t.date?t.date.slice(0,10):''}</div>
+              </div>`).join('')}
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>
+  `;
+}
+
+function tog(i){document.getElementById('td'+i).classList.toggle('open')}
+
+function download(){
+  if(!REPORT)return;
+  const{winning,allSorted,currentSignals,pipThreshold,minTrades,generatedAt}=REPORT;
+  let csv='FOREX COMBO FINDER V2 — RAPPORT COMPLET\n';
+  csv+=`Généré le : ${new Date(generatedAt).toLocaleString('fr-FR')}\n`;
+  csv+=`Seuil pips : ${pipThreshold} | Min trades : ${minTrades}\n`;
+  csv+=`Configurations ≥ 55% : ${winning.length} sur ${allSorted.length} testées\n\n`;
+  csv+='═══════════════════════════════════════════════════\n';
+  csv+='TOUTES LES CONFIGURATIONS (TRIÉES PAR WIN RATE)\n';
+  csv+='═══════════════════════════════════════════════════\n';
+  csv+='Rang,Mode,Score Min,Direction,Win Rate,Gagnants,Total Trades,Pips Total,Pips Moyen,Qualité\n';
+  allSorted.forEach((r,i)=>{
+    csv+=`${i+1},${r.mode},${r.scoreMin}/6,${r.dir},${r.wr}%,${r.wins},${r.total},${r.totalPips},${r.avgPips},${r.wr>=65?'FORT':r.wr>=55?'BON':'FAIBLE'}\n`;
+  });
+  csv+='\n═══════════════════════════════════════════════════\n';
+  csv+='SIGNAUX ACTUELS\n';
+  csv+='═══════════════════════════════════════════════════\n';
+  csv+='Paire,Direction,Win Rate,Total Trades,Mode,Score\n';
+  currentSignals.forEach(s=>{csv+=`${s.pair},${s.dir},${s.wr}%,${s.total},${s.mode},${s.scoreMin}/6\n`});
+  csv+='\n═══════════════════════════════════════════════════\n';
+  csv+='DÉTAIL DES TRADES DES 10 MEILLEURES CONFIGS\n';
+  csv+='═══════════════════════════════════════════════════\n';
+  winning.slice(0,10).forEach((r,i)=>{
+    csv+=`\n--- Config #${i+1} : ${r.mode} | ≥${r.scoreMin}/6 → ${r.dir} | ${r.wr}% win rate ---\n`;
+    csv+='Date,Paire,Direction,Résultat,Pips\n';
+    r.trades.forEach(t=>{csv+=`${t.date},${t.pair},${t.dir},${t.result},${t.pips}\n`});
+  });
+  csv+='\n═══════════════════════════════════════════════════\n';
+  csv+='INTERPRÉTATION\n';
+  csv+='═══════════════════════════════════════════════════\n';
+  csv+='TREND = signal dans le sens de la majorité des indicateurs\n';
+  csv+='COUNTER-TREND = signal dans le sens OPPOSÉ (retournement)\n';
+  csv+='Score 3/6 = signal quand 3 indicateurs sur 6 sont alignés (plus fréquent, moins sélectif)\n';
+  csv+='Score 6/6 = signal quand TOUS les indicateurs sont alignés (très rare, très sélectif)\n';
+
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`ComboFinderV2_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+function setProg(pct,label,text){
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progLabel').textContent=label;
+  document.getElementById('progText').textContent=text;
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+window.onload=()=>{const k=localStorage.getItem('forex_api_key');if(k)document.getElementById('apiKey').value=k}
+</script>
+</body>
+</html>
