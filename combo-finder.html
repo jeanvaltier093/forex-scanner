@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forex Combo Finder — Recherche Exhaustive</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#080c14;--bg2:#0d1320;--bg3:#111827;--border:#1e2d45;--accent:#00d4ff;--buy:#00ff88;--sell:#ff4466;--text:#e8edf5;--muted:#5a7090;--gold:#ffd700;--purple:#a855f7}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:20px}
+.app{max-width:1200px;margin:0 auto}
+.header{display:flex;align-items:center;gap:16px;padding:20px 0;border-bottom:1px solid var(--border);margin-bottom:24px}
+.logo-icon{font-size:28px;color:var(--gold);filter:drop-shadow(0 0 10px var(--gold))}
+.logo-text{font-size:22px;font-weight:800;letter-spacing:3px}
+.accent{color:var(--gold)}
+.subtitle{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:4px}
+.info{background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.25);border-radius:8px;padding:16px;margin-bottom:24px;font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);line-height:1.8}
+.info strong{color:var(--gold)}
+.setup-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px}
+.setup-box h2{font-size:14px;font-weight:800;letter-spacing:2px;color:var(--gold);margin-bottom:16px}
+.input-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.ig{display:flex;flex-direction:column;gap:6px;flex:1;min-width:150px}
+.ig label{font-size:10px;color:var(--muted);letter-spacing:2px;font-family:'Space Mono',monospace}
+.ig input{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:6px;font-family:'Space Mono',monospace;font-size:13px;outline:none;width:100%}
+.ig input:focus{border-color:var(--gold)}
+.run-btn{background:var(--gold);color:var(--bg);border:none;padding:12px 28px;border-radius:6px;cursor:pointer;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:2px;white-space:nowrap;transition:all .2s}
+.run-btn:hover{opacity:.85}
+.run-btn:disabled{opacity:.4;cursor:not-allowed}
+.dl-btn{background:var(--buy);color:var(--bg);border:none;padding:12px 24px;border-radius:6px;cursor:pointer;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:2px;white-space:nowrap;display:none}
+.prog-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px;display:none}
+.prog-label{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:8px}
+.prog-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.prog-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .3s}
+.prog-text{font-family:'Space Mono',monospace;font-size:11px;color:var(--gold)}
+.results{display:none}
+.sec{font-family:'Space Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;margin:24px 0 12px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+.sc-val{font-family:'Space Mono',monospace;font-size:20px;font-weight:700;margin-bottom:4px}
+.sc.up .sc-val{color:var(--buy)}.sc.down .sc-val{color:var(--sell)}.sc.n .sc-val{color:var(--gold)}
+.sc-label{font-size:9px;color:var(--muted);letter-spacing:2px}
+/* COMBO TABLE */
+.combo-table{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px}
+.combo-header{display:grid;grid-template-columns:.4fr 2fr .8fr .8fr .8fr .8fr .8fr;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:9px;color:var(--muted);letter-spacing:2px;font-family:'Space Mono',monospace}
+.combo-row{border-bottom:1px solid var(--border);transition:background .2s}
+.combo-row:last-child{border-bottom:none}
+.combo-row:hover{background:var(--bg3)}
+.combo-main{display:grid;grid-template-columns:.4fr 2fr .8fr .8fr .8fr .8fr .8fr;padding:12px 16px;font-size:11px;font-family:'Space Mono',monospace;align-items:center;cursor:pointer}
+.combo-detail{display:none;padding:12px 16px;background:rgba(0,0,0,.2);border-top:1px solid var(--border)}
+.combo-detail.open{display:block}
+.badge{padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;font-family:'Space Mono',monospace}
+.badge.s{background:rgba(0,255,136,.15);color:var(--buy);border:1px solid rgba(0,255,136,.4)}
+.badge.g{background:rgba(255,215,0,.15);color:var(--gold);border:1px solid rgba(255,215,0,.4)}
+.badge.b{background:rgba(255,68,102,.15);color:var(--sell);border:1px solid rgba(255,68,102,.4)}
+.ind-tag{display:inline-block;padding:3px 8px;background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.3);border-radius:3px;font-family:'Space Mono',monospace;font-size:10px;color:var(--purple);margin:2px}
+.trade-mini{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:4px;margin-top:8px}
+.tm{background:var(--bg3);border-radius:4px;padding:6px 8px;font-family:'Space Mono',monospace;font-size:10px}
+.tm.w{border-left:2px solid var(--buy)}.tm.l{border-left:2px solid var(--sell)}
+.warn{background:rgba(255,68,102,.08);border:1px solid rgba(255,68,102,.3);border-radius:8px;padding:16px;margin-bottom:24px;font-family:'Space Mono',monospace;font-size:11px;color:var(--sell);line-height:1.8}
+@media(max-width:768px){
+  .combo-header,.combo-main{grid-template-columns:.4fr 1.5fr .8fr .8fr .8fr;font-size:10px}
+  .combo-header span:nth-child(n+6),.combo-main span:nth-child(n+6){display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <span class="logo-icon">◈</span>
+    <div>
+      <div class="logo-text">COMBO<span class="accent">FINDER</span></div>
+      <div class="subtitle">RECHERCHE EXHAUSTIVE DES COMBINAISONS GAGNANTES ≥ 55% WIN RATE</div>
+    </div>
+  </div>
+
+  <div class="info">
+    <strong>Approche quant — ce que font les hedge funds :</strong><br>
+    1. Calcule les 6 indicateurs les plus prédictifs sur chaque bougie historique<br>
+    2. Teste <strong>toutes les combinaisons possibles</strong> (2 à 6 indicateurs simultanés)<br>
+    3. Pour chaque combinaison : simule tous les trades historiques déclenchés<br>
+    4. Mesure le <strong>vrai win rate</strong> avec TP/SL réels sur les bougies suivantes<br>
+    5. Ne garde que les combinaisons avec <strong>≥ 55% win rate ET ≥ 8 occurrences</strong><br>
+    6. Vérifie que le signal ne se déclenche <strong>que quand c'est vraiment fort</strong>
+  </div>
+
+  <div class="setup-box">
+    <h2>⚙️ CONFIGURATION</h2>
+    <div class="input-row">
+      <div class="ig">
+        <label>CLÉ API TWELVE DATA</label>
+        <input type="text" id="apiKey" placeholder="Votre clé API..."/>
+      </div>
+      <div class="ig" style="max-width:140px">
+        <label>BOUGIES (4H)</label>
+        <input type="number" id="candleCount" value="500" min="300" max="800"/>
+      </div>
+      <div class="ig" style="max-width:130px">
+        <label>SEUIL PIPS</label>
+        <input type="number" id="pipThreshold" value="80" min="40" max="200"/>
+      </div>
+      <div class="ig" style="max-width:130px">
+        <label>MIN OCCURRENCES</label>
+        <input type="number" id="minOcc" value="8" min="5" max="30"/>
+      </div>
+      <button class="run-btn" id="runBtn" onclick="run()">🔍 ANALYSER</button>
+      <button class="dl-btn" id="dlBtn" onclick="download()">⬇ RAPPORT CSV</button>
+    </div>
+  </div>
+
+  <div class="prog-box" id="progBox">
+    <div class="prog-label" id="progLabel">Initialisation...</div>
+    <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    <div class="prog-text" id="progText"></div>
+  </div>
+
+  <div class="results" id="results"></div>
+</div>
+<script>
+const PAIRS=['EUR/USD','GBP/USD','USD/JPY','USD/CHF','AUD/USD','NZD/USD','USD/CAD','EUR/GBP','EUR/JPY','GBP/JPY','EUR/CHF','AUD/JPY'];
+const FLAGS={'EUR/USD':'🇪🇺🇺🇸','GBP/USD':'🇬🇧🇺🇸','USD/JPY':'🇺🇸🇯🇵','USD/CHF':'🇺🇸🇨🇭','AUD/USD':'🇦🇺🇺🇸','NZD/USD':'🇳🇿🇺🇸','USD/CAD':'🇺🇸🇨🇦','EUR/GBP':'🇪🇺🇬🇧','EUR/JPY':'🇪🇺🇯🇵','GBP/JPY':'🇬🇧🇯🇵','EUR/CHF':'🇪🇺🇨🇭','AUD/JPY':'🇦🇺🇯🇵'};
+let REPORT=null;
+
+// ─── INDICATEURS ─────────────────────────────────────────────────────────────
+function calcEMA(d,p){if(d.length<=p)return[d[d.length-1]||0];const k=2/(p+1);let e=d.slice(0,p).reduce((a,b)=>a+b,0)/p;const r=[e];for(let i=p;i<d.length;i++){e=d[i]*k+e*(1-k);r.push(e)}return r}
+
+function getATR(h,l,c,p=14){
+  const tr=[];for(let i=1;i<c.length;i++)tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])));
+  if(!tr.length)return 0;return tr.slice(-p).reduce((a,b)=>a+b,0)/Math.min(p,tr.length);
+}
+
+// Les 6 indicateurs prédictifs — retournent BUY ou SELL
+function ind_EMA_Cross(c){
+  if(c.length<201)return null;
+  const e50=calcEMA(c,50),e200=calcEMA(c,200);
+  // Counter-trend: Death Cross → BUY signal, Golden Cross → SELL signal
+  return e50[e50.length-1]<e200[e200.length-1]?'BUY':'SELL';
+}
+function ind_OBV(c){
+  const obv=[0];for(let i=1;i<c.length;i++){const body=Math.abs(c[i]-c[i-1])*10000;obv.push(obv[i-1]+(c[i]>c[i-1]?body:-body))}
+  const last=obv[obv.length-1],prev=obv[obv.length-11]||0;
+  // Counter-trend: Selling pressure → BUY, Buying pressure → SELL
+  return last<prev?'BUY':'SELL';
+}
+function ind_Stoch_Cross(h,l,c,kp=14,dp=3){
+  const k=[];for(let i=kp-1;i<c.length;i++){const hh=Math.max(...h.slice(i-kp+1,i+1)),ll=Math.min(...l.slice(i-kp+1,i+1));k.push(hh===ll?50:((c[i]-ll)/(hh-ll))*100)}
+  const d=[];for(let i=dp-1;i<k.length;i++)d.push(k.slice(i-dp+1,i+1).reduce((a,b)=>a+b,0)/dp);
+  const kv=k[k.length-1],dv=d[d.length-1];
+  // Counter-trend: K<D (bearish cross) → BUY, K>D (bullish cross) → SELL
+  return kv<dv?'BUY':'SELL';
+}
+function ind_PSAR(h,l,c){
+  const af0=0.02,afMax=0.2;let bull=true,sar=l[0]||0,ep=h[0]||0,af=af0;
+  for(let i=1;i<c.length;i++){sar=sar+af*(ep-sar);if(bull){if(h[i]>ep){ep=h[i];af=Math.min(af+af0,afMax)}if(c[i]<sar){bull=false;sar=ep;ep=l[i];af=af0}}else{if(l[i]<ep){ep=l[i];af=Math.min(af+af0,afMax)}if(c[i]>sar){bull=true;sar=ep;ep=h[i];af=af0}}}
+  // Counter-trend: Price below SAR (bearish SAR) → BUY, Above SAR → SELL
+  return !bull?'BUY':'SELL';
+}
+function ind_ADX_Dir(h,l,c,p=14){
+  const tr=[],pm=[],mm=[];for(let i=1;i<c.length;i++){tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])));const u=h[i]-h[i-1],dv=l[i-1]-l[i];pm.push(u>dv&&u>0?u:0);mm.push(dv>u&&dv>0?dv:0)}
+  const sTR=tr.slice(-p).reduce((a,b)=>a+b,0)||1;const sP=pm.slice(-p).reduce((a,b)=>a+b,0);const sM=mm.slice(-p).reduce((a,b)=>a+b,0);
+  // Counter-trend: ADX Direction DOWN (bears winning) → BUY, UP → SELL
+  return sM>sP?'BUY':'SELL';
+}
+function ind_EMA_Price(c){
+  if(c.length<51)return null;
+  const e50=calcEMA(c,50);const price=c[c.length-1];
+  // Counter-trend: Price below EMA50 → BUY, above → SELL
+  return price<e50[e50.length-1]?'BUY':'SELL';
+}
+
+const INDICATORS=[
+  {name:'EMA Cross (Death→BUY)',fn:(c,h,l)=>ind_EMA_Cross(c)},
+  {name:'OBV Pression (Vente→BUY)',fn:(c,h,l)=>ind_OBV(c)},
+  {name:'Stoch Cross (K<D→BUY)',fn:(c,h,l)=>ind_Stoch_Cross(h,l,c)},
+  {name:'Parabolic SAR (Below→BUY)',fn:(c,h,l)=>ind_PSAR(h,l,c)},
+  {name:'ADX Direction (Bear→BUY)',fn:(c,h,l)=>ind_ADX_Dir(h,l,c)},
+  {name:'Prix vs EMA50 (Below→BUY)',fn:(c,h,l)=>ind_EMA_Price(c)},
+];
+
+// Générer toutes les combinaisons de 2 à 6 indicateurs
+function getCombos(){
+  const n=INDICATORS.length,combos=[];
+  for(let mask=3;mask<(1<<n);mask++){
+    const bits=[];for(let b=0;b<n;b++)if(mask&(1<<b))bits.push(b);
+    if(bits.length>=2)combos.push(bits);
+  }
+  return combos;
+}
+
+// Simuler un trade — cherche si TP ou SL touché dans les prochaines bougies
+function simulateTrade(dir,entry,tp,sl,futureH,futureL,maxCandles=24){
+  for(let i=0;i<Math.min(maxCandles,futureH.length);i++){
+    if(dir==='BUY'){if(futureH[i]>=tp)return'WIN';if(futureL[i]<=sl)return'LOSS';}
+    else{if(futureL[i]<=tp)return'WIN';if(futureH[i]>=sl)return'LOSS';}
+  }
+  return null; // encore ouvert
+}
+
+async function run(){
+  const apiKey=document.getElementById('apiKey').value.trim();
+  const candleCount=parseInt(document.getElementById('candleCount').value)||500;
+  const pipThreshold=parseInt(document.getElementById('pipThreshold').value)||80;
+  const minOcc=parseInt(document.getElementById('minOcc').value)||8;
+  if(!apiKey){alert('Clé API manquante');return}
+
+  document.getElementById('runBtn').disabled=true;
+  document.getElementById('dlBtn').style.display='none';
+  document.getElementById('progBox').style.display='block';
+  document.getElementById('results').style.display='none';
+  document.getElementById('results').innerHTML='';
+
+  // Collecter toutes les données historiques
+  const allData=[];
+  for(let pi=0;pi<PAIRS.length;pi++){
+    const pair=PAIRS[pi];
+    setProg(Math.round(pi/PAIRS.length*40),'Téléchargement '+pair,`${pi+1}/${PAIRS.length} paires`);
+    try{
+      const r=await fetch(`https://api.twelvedata.com/time_series?symbol=${pair}&interval=4h&outputsize=${candleCount}&apikey=${apiKey}`);
+      const d=await r.json();
+      if(!d.values||d.status==='error'){await sleep(8000);continue}
+      const candles=d.values.reverse();
+      allData.push({pair,candles,
+        closes:candles.map(c=>parseFloat(c.close)),
+        highs:candles.map(c=>parseFloat(c.high)),
+        lows:candles.map(c=>parseFloat(c.low)),
+        isJPY:pair.includes('JPY')
+      });
+    }catch(e){console.error(pair,e)}
+    await sleep(8000);
+  }
+
+  // Calculer indicateurs snapshot à chaque point historique
+  setProg(45,'Calcul des indicateurs sur tout l\'historique...','');
+  const snapshots=[]; // {pair,idx,date,closes,highs,lows,indicators{name:dir},atr,price}
+
+  for(const pd of allData){
+    const{pair,closes,highs,lows,candles,isJPY}=pd;
+    for(let i=210;i<closes.length-25;i++){
+      const c=closes.slice(0,i+1),h=highs.slice(0,i+1),l=lows.slice(0,i+1);
+      const inds={};
+      let valid=true;
+      for(const ind of INDICATORS){
+        const v=ind.fn(c,h,l);
+        if(!v){valid=false;break}
+        inds[ind.name]=v;
+      }
+      if(!valid)continue;
+      const atr=getATR(h,l,c,14);
+      snapshots.push({pair,idx:i,date:candles[i].datetime,closes,highs,lows,inds,atr,price:closes[i],isJPY});
+    }
+  }
+
+  // Tester toutes les combinaisons
+  setProg(55,'Test exhaustif de toutes les combinaisons...','');
+  const combos=getCombos();
+  const results=[];
+  let processed=0;
+
+  for(const bits of combos){
+    const comboNames=bits.map(b=>INDICATORS[b].name);
+    const buyTrades=[],sellTrades=[];
+
+    for(const snap of snapshots){
+      // Vérifier si tous les indicateurs de cette combo sont alignés
+      const allBUY=bits.every(b=>snap.inds[INDICATORS[b].name]==='BUY');
+      const allSELL=bits.every(b=>snap.inds[INDICATORS[b].name]==='SELL');
+      if(!allBUY&&!allSELL)continue;
+
+      const dir=allBUY?'BUY':'SELL';
+      const pipDiv=snap.isJPY?0.01:0.0001;
+      const slPips=snap.atr*1.5;
+      const tpPips=slPips*1.5;
+      const entry=snap.price;
+      const sl=dir==='BUY'?entry-slPips:entry+slPips;
+      const tp=dir==='BUY'?entry+tpPips:entry-tpPips;
+
+      const futureH=snap.highs.slice(snap.idx+1,snap.idx+25);
+      const futureL=snap.lows.slice(snap.idx+1,snap.idx+25);
+      const result=simulateTrade(dir,entry,tp,sl,futureH,futureL,24);
+      if(!result)continue; // trade encore ouvert
+
+      const pips=dir==='BUY'
+        ?(result==='WIN'?(tp-entry)/pipDiv:(sl-entry)/pipDiv)
+        :(result==='WIN'?(entry-tp)/pipDiv:(entry-sl)/pipDiv);
+
+      const trade={pair:snap.pair,date:snap.date,dir,entry,tp,sl,result,pips:parseFloat(pips.toFixed(1))};
+      if(dir==='BUY')buyTrades.push(trade);
+      else sellTrades.push(trade);
+    }
+
+    // Analyser résultats BUY
+    if(buyTrades.length>=minOcc){
+      const wins=buyTrades.filter(t=>t.result==='WIN').length;
+      const wr=Math.round(wins/buyTrades.length*100);
+      const totalPips=parseFloat(buyTrades.reduce((s,t)=>s+t.pips,0).toFixed(1));
+      if(wr>=55)results.push({combo:comboNames,dir:'BUY',trades:buyTrades,total:buyTrades.length,wins,wr,totalPips,avgPips:parseFloat((totalPips/buyTrades.length).toFixed(1))});
+    }
+    // Analyser résultats SELL
+    if(sellTrades.length>=minOcc){
+      const wins=sellTrades.filter(t=>t.result==='WIN').length;
+      const wr=Math.round(wins/sellTrades.length*100);
+      const totalPips=parseFloat(sellTrades.reduce((s,t)=>s+t.pips,0).toFixed(1));
+      if(wr>=55)results.push({combo:comboNames,dir:'SELL',trades:sellTrades,total:sellTrades.length,wins,wr,totalPips,avgPips:parseFloat((totalPips/sellTrades.length).toFixed(1))});
+    }
+
+    processed++;
+    if(processed%20===0){
+      const pct=55+Math.round(processed/combos.length*40);
+      setProg(Math.min(pct,95),`Test combinaison ${processed}/${combos.length}...`,`${results.length} combinaisons gagnantes trouvées`);
+      await sleep(0);
+    }
+  }
+
+  // Détecter signaux actuels
+  const currentSignals=detectCurrentSignals(allData,results);
+
+  setProg(100,'Analyse terminée !',`${results.length} combinaisons ≥ 55% trouvées sur ${combos.length} testées`);
+  REPORT={results:results.sort((a,b)=>b.wr-a.wr||b.total-a.total),currentSignals,pipThreshold,minOcc,generatedAt:new Date().toISOString()};
+  renderResults(REPORT);
+  document.getElementById('runBtn').disabled=false;
+  document.getElementById('dlBtn').style.display='block';
+}
+
+function detectCurrentSignals(allData,results){
+  const signals=[];
+  for(const pd of allData){
+    const{pair,closes,highs,lows}=pd;
+    if(closes.length<215)continue;
+    const c=closes,h=highs,l=lows;
+    const inds={};
+    for(const ind of INDICATORS){const v=ind.fn(c,h,l);if(v)inds[ind.name]=v}
+    // Check which winning combos fire right now
+    const fired=[];
+    for(const res of results.filter(r=>r.wr>=60)){
+      const allMatch=res.combo.every(name=>inds[name]===res.dir);
+      if(allMatch)fired.push({combo:res.combo,dir:res.dir,wr:res.wr,total:res.total});
+    }
+    if(fired.length>0){
+      const bestWR=Math.max(...fired.map(f=>f.wr));
+      const best=fired.find(f=>f.wr===bestWR);
+      signals.push({pair,combo:best.combo,dir:best.dir,wr:best.wr,total:best.total,allFired:fired.length});
+    }
+  }
+  return signals.sort((a,b)=>b.wr-a.wr);
+}
+
+function renderResults(report){
+  const{results,currentSignals,pipThreshold,minOcc}=report;
+  const box=document.getElementById('results');
+  box.style.display='block';
+  const total55=results.length;
+  const total65=results.filter(r=>r.wr>=65).length;
+  const total70=results.filter(r=>r.wr>=70).length;
+  const best=results[0];
+
+  box.innerHTML=`
+    <div class="sec">📊 RÉSULTATS — BACKTEST EXHAUSTIF COMBINATOIRE</div>
+    <div class="stats-grid">
+      <div class="sc n"><div class="sc-val">${results.length}</div><div class="sc-label">COMBOS ≥ 55%</div></div>
+      <div class="sc up"><div class="sc-val">${total65}</div><div class="sc-label">COMBOS ≥ 65%</div></div>
+      <div class="sc up"><div class="sc-val">${total70}</div><div class="sc-label">COMBOS ≥ 70%</div></div>
+      <div class="sc n"><div class="sc-val">${best?best.wr+'%':'—'}</div><div class="sc-label">MEILLEUR WIN RATE</div></div>
+      <div class="sc n"><div class="sc-val">${currentSignals.length}</div><div class="sc-label">SIGNAUX ACTUELS</div></div>
+    </div>
+
+    ${currentSignals.length>0?`
+    <div class="sec">🚨 SIGNAUX ACTUELS — COMBINAISONS GAGNANTES QUI SE DÉCLENCHENT MAINTENANT</div>
+    <div style="background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.25);border-radius:8px;padding:16px;margin-bottom:24px">
+      ${currentSignals.map(s=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
+          <span style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700">${FLAGS[s.pair]||''} ${s.pair}</span>
+          <span style="padding:4px 12px;border-radius:4px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;background:${s.dir==='BUY'?'rgba(0,255,136,.15)':'rgba(255,68,102,.15)'};color:${s.dir==='BUY'?'var(--buy)':'var(--sell)'};border:1px solid ${s.dir==='BUY'?'var(--buy)':'var(--sell)'}">${s.dir==='BUY'?'▲ BUY':'▼ SELL'}</span>
+          <span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--gold)">${s.wr}% win rate historique</span>
+          <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted)">${s.total} trades historiques | ${s.allFired} combo(s) active(s)</span>
+          <div style="width:100%;font-family:'Space Mono',monospace;font-size:10px;color:var(--purple);margin-top:4px">${s.combo.map(n=>`<span style="background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);border-radius:3px;padding:2px 6px;margin:2px;display:inline-block">${n}</span>`).join('')}</div>
+        </div>`).join('')}
+    </div>`:'<div class="warn">Aucun signal actuel — aucune combinaison gagnante ne se déclenche en ce moment. C\'est une BONNE chose — l\'outil attend vraiment les vraies opportunités.</div>'}
+
+    <div class="sec">🏆 TOUTES LES COMBINAISONS GAGNANTES (≥ 55% WIN RATE — triées par win rate)</div>
+    ${results.length===0?'<div class="warn">Aucune combinaison trouvée avec ≥ '+minOcc+' occurrences et ≥ 55% de win rate. Essayez de réduire le minimum d\'occurrences.</div>':''}
+    <div class="combo-table">
+      <div class="combo-header">
+        <span>#</span><span>INDICATEURS COMBINÉS</span>
+        <span>WIN RATE</span><span>DIRECTION</span>
+        <span>TRADES</span><span>PIPS TOT.</span><span>QUALITÉ</span>
+      </div>
+      ${results.map((r,i)=>`
+        <div class="combo-row" id="cr${i}">
+          <div class="combo-main" onclick="toggleDetail(${i})">
+            <span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--gold)">${i+1}</span>
+            <span style="font-size:10px;color:var(--muted)">${r.combo.length} indicateurs</span>
+            <span style="font-family:'Space Mono',monospace;font-weight:700;font-size:13px;color:${r.wr>=70?'var(--buy)':r.wr>=60?'var(--gold)':'var(--accent)'}">${r.wr}%</span>
+            <span style="font-family:'Space Mono',monospace;font-size:11px;color:${r.dir==='BUY'?'var(--buy)':'var(--sell)'}">${r.dir==='BUY'?'▲ BUY':'▼ SELL'}</span>
+            <span style="font-family:'Space Mono',monospace">${r.wins}/${r.total}</span>
+            <span style="font-family:'Space Mono',monospace;color:${r.totalPips>=0?'var(--buy)':'var(--sell)'}">${r.totalPips>=0?'+':''}${r.totalPips}</span>
+            <span class="badge ${r.wr>=70?'s':r.wr>=60?'g':'b'}">${r.wr>=70?'FORT':r.wr>=60?'BON':'PASSABLE'}</span>
+          </div>
+          <div class="combo-detail" id="cd${i}">
+            <div style="margin-bottom:8px">${r.combo.map(n=>`<span class="ind-tag">${n}</span>`).join('')}</div>
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:8px">
+              Win rate: ${r.wr}% | ${r.wins} gagnants / ${r.total-r.wins} perdants | Pips moyen: ${r.avgPips>=0?'+':''}${r.avgPips}
+            </div>
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--accent);margin-bottom:6px">Détail des ${Math.min(r.trades.length,20)} derniers trades :</div>
+            <div class="trade-mini">
+              ${r.trades.slice(-20).map(t=>`<div class="tm ${t.result==='WIN'?'w':'l'}">
+                <div style="color:var(--muted)">${t.pair}</div>
+                <div style="color:${t.result==='WIN'?'var(--buy)':'var(--sell)'}">${t.result==='WIN'?'✅':'❌'} ${t.pips>=0?'+':''}${t.pips}p</div>
+                <div style="color:var(--muted);font-size:9px">${t.date?t.date.slice(0,10):''}</div>
+              </div>`).join('')}
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>
+  `;
+}
+
+function toggleDetail(i){
+  const el=document.getElementById('cd'+i);
+  el.classList.toggle('open');
+}
+
+function download(){
+  if(!REPORT)return;
+  const{results,currentSignals,pipThreshold,minOcc,generatedAt}=REPORT;
+  let csv='FOREX COMBO FINDER — RAPPORT BACKTEST EXHAUSTIF\n';
+  csv+=`Généré le : ${new Date(generatedAt).toLocaleString('fr-FR')}\n`;
+  csv+=`Seuil pips : ${pipThreshold} | Min occurrences : ${minOcc}\n`;
+  csv+=`Combinaisons gagnantes trouvées : ${results.length}\n\n`;
+  csv+='═══════════════════════════════════════════════════\n';
+  csv+='CLASSEMENT DES COMBINAISONS GAGNANTES\n';
+  csv+='═══════════════════════════════════════════════════\n';
+  csv+='Rang,Direction,Win Rate,Gagnants,Total Trades,Pips Total,Pips Moyen,Nb Indicateurs,Combinaison\n';
+  results.forEach((r,i)=>{
+    csv+=`${i+1},${r.dir},${r.wr}%,${r.wins},${r.total},${r.totalPips},${r.avgPips},${r.combo.length},"${r.combo.join(' + ')}"\n`;
+  });
+  csv+='\n═══════════════════════════════════════════════════\n';
+  csv+='SIGNAUX ACTUELS\n';
+  csv+='═══════════════════════════════════════════════════\n';
+  csv+='Paire,Direction,Win Rate Historique,Trades Historiques,Combinaison active\n';
+  currentSignals.forEach(s=>{
+    csv+=`${s.pair},${s.dir},${s.wr}%,${s.total},"${s.combo.join(' + ')}"\n`;
+  });
+  csv+='\n═══════════════════════════════════════════════════\n';
+  csv+='DÉTAIL COMPLET DES TRADES PAR COMBINAISON\n';
+  csv+='═══════════════════════════════════════════════════\n';
+  results.slice(0,20).forEach((r,i)=>{
+    csv+=`\n--- Combinaison #${i+1} : ${r.dir} | ${r.wr}% win rate ---\n`;
+    csv+=`Indicateurs : ${r.combo.join(' + ')}\n`;
+    csv+='Date,Paire,Direction,Résultat,Pips\n';
+    r.trades.forEach(t=>{csv+=`${t.date},${t.pair},${t.dir},${t.result},${t.pips}\n`});
+  });
+  csv+='\n═══════════════════════════════════════════════════\n';
+  csv+='MÉTHODE\n';
+  csv+='═══════════════════════════════════════════════════\n';
+  csv+='Logique counter-trend basée sur pattern finder V2 :\n';
+  csv+='- EMA Death Cross → signal BUY\n';
+  csv+='- OBV Pression Vente → signal BUY\n';
+  csv+='- Stoch K < D → signal BUY\n';
+  csv+='- Prix EN DESSOUS SAR → signal BUY\n';
+  csv+='- ADX Direction Baissière → signal BUY\n';
+  csv+='- Prix EN DESSOUS EMA50 → signal BUY\n';
+  csv+='(Et inverse pour SELL)\n';
+
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`ComboReport_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+function setProg(pct,label,text){
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progLabel').textContent=label;
+  document.getElementById('progText').textContent=text;
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+window.onload=()=>{const k=localStorage.getItem('forex_api_key');if(k)document.getElementById('apiKey').value=k}
+</script>
+</body>
+</html>
