@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forex Pattern Finder V2 — 15 Indicateurs</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#080c14;--bg2:#0d1320;--bg3:#111827;--border:#1e2d45;--accent:#00d4ff;--buy:#00ff88;--sell:#ff4466;--text:#e8edf5;--muted:#5a7090;--gold:#ffd700;--purple:#a855f7}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:20px}
+.app{max-width:1200px;margin:0 auto}
+.header{display:flex;align-items:center;gap:16px;padding:20px 0;border-bottom:1px solid var(--border);margin-bottom:24px}
+.logo-icon{font-size:28px;color:var(--purple);filter:drop-shadow(0 0 10px var(--purple))}
+.logo-text{font-size:22px;font-weight:800;letter-spacing:3px}
+.accent{color:var(--purple)}
+.subtitle{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:4px}
+.setup-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px}
+.setup-box h2{font-size:14px;font-weight:800;letter-spacing:2px;color:var(--purple);margin-bottom:16px}
+.input-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.input-group{display:flex;flex-direction:column;gap:6px;flex:1;min-width:160px}
+.input-group label{font-size:10px;color:var(--muted);letter-spacing:2px;font-family:'Space Mono',monospace}
+.input-group input{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:6px;font-family:'Space Mono',monospace;font-size:13px;outline:none;width:100%}
+.input-group input:focus{border-color:var(--purple)}
+.run-btn{background:var(--purple);color:white;border:none;padding:12px 28px;border-radius:6px;cursor:pointer;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:2px;white-space:nowrap;transition:all .2s}
+.run-btn:hover{opacity:.85}
+.run-btn:disabled{opacity:.4;cursor:not-allowed}
+.dl-btn{background:var(--buy);color:var(--bg);border:none;padding:12px 28px;border-radius:6px;cursor:pointer;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:2px;white-space:nowrap;transition:all .2s;display:none}
+.dl-btn:hover{opacity:.85}
+.progress-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px;display:none}
+.progress-label{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:8px}
+.prog-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.prog-fill{height:100%;background:var(--purple);border-radius:2px;transition:width .3s}
+.prog-text{font-family:'Space Mono',monospace;font-size:11px;color:var(--purple)}
+.results-box{display:none}
+.sec-title{font-family:'Space Mono',monospace;font-size:11px;color:var(--purple);letter-spacing:2px;margin:24px 0 12px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+.stat-val{font-family:'Space Mono',monospace;font-size:20px;font-weight:700;margin-bottom:4px}
+.stat-label{font-size:9px;color:var(--muted);letter-spacing:2px}
+.stat-card.up .stat-val{color:var(--buy)}
+.stat-card.down .stat-val{color:var(--sell)}
+.stat-card.neu .stat-val{color:var(--purple)}
+/* RANKING TABLE */
+.rank-table{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:24px}
+.rank-header{display:grid;grid-template-columns:.4fr 1.5fr 1fr 1fr 1fr 1fr 1fr;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:9px;color:var(--muted);letter-spacing:2px;font-family:'Space Mono',monospace}
+.rank-row{display:grid;grid-template-columns:.4fr 1.5fr 1fr 1fr 1fr 1fr 1fr;padding:12px 16px;border-bottom:1px solid var(--border);font-size:11px;font-family:'Space Mono',monospace;align-items:center;transition:background .2s}
+.rank-row:last-child{border-bottom:none}
+.rank-row:hover{background:var(--bg3)}
+.rank-num{font-weight:700;color:var(--purple)}
+.score-bar-wrap{display:flex;align-items:center;gap:8px}
+.score-bar{height:6px;background:var(--border);border-radius:3px;flex:1;overflow:hidden}
+.score-fill{height:100%;border-radius:3px}
+.badge{padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;font-family:'Space Mono',monospace}
+.badge.strong{background:rgba(0,255,136,.15);color:var(--buy);border:1px solid var(--buy)}
+.badge.medium{background:rgba(255,215,0,.15);color:var(--gold);border:1px solid var(--gold)}
+.badge.weak{background:rgba(255,68,102,.15);color:var(--sell);border:1px solid var(--sell)}
+/* SIGNAL BOX */
+.signal-box{background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.3);border-radius:8px;padding:16px;margin-bottom:24px}
+.signal-title{font-family:'Space Mono',monospace;font-size:12px;color:var(--purple);letter-spacing:2px;margin-bottom:12px}
+.signal-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.signal-item:last-child{border-bottom:none}
+.signal-pair{font-family:'Space Mono',monospace;font-size:13px;font-weight:700}
+.signal-dir{padding:3px 10px;border-radius:4px;font-family:'Space Mono',monospace;font-size:11px;font-weight:700}
+.signal-dir.up{background:rgba(0,255,136,.15);color:var(--buy);border:1px solid var(--buy)}
+.signal-dir.down{background:rgba(255,68,102,.15);color:var(--sell);border:1px solid var(--sell)}
+.signal-score{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--purple)}
+.signal-inds{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);width:100%}
+/* DETAIL */
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:24px}
+.detail-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.detail-title{font-size:14px;font-weight:800;letter-spacing:1px;margin-bottom:4px}
+.detail-sub{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:14px}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-family:'Space Mono',monospace;font-size:11px}
+.detail-row:last-child{border-bottom:none}
+.detail-label{color:var(--muted)}
+.detail-val{font-weight:700}
+.detail-pct{font-size:10px;color:var(--accent);margin-left:6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <span class="logo-icon">◈</span>
+    <div>
+      <div class="logo-text">PATTERN<span class="accent">FINDER</span> V2</div>
+      <div class="subtitle">15 INDICATEURS — ANALYSE BASÉE SUR L'HISTORIQUE RÉEL</div>
+    </div>
+  </div>
+
+  <div class="setup-box">
+    <h2>⚙️ CONFIGURATION</h2>
+    <div class="input-row">
+      <div class="input-group">
+        <label>CLÉ API TWELVE DATA</label>
+        <input type="text" id="apiKey" placeholder="Votre clé API..."/>
+      </div>
+      <div class="input-group" style="max-width:160px">
+        <label>BOUGIES (4H)</label>
+        <input type="number" id="candleCount" value="500" min="300" max="800"/>
+      </div>
+      <div class="input-group" style="max-width:160px">
+        <label>SEUIL PIPS</label>
+        <input type="number" id="pipThreshold" value="80" min="40" max="200"/>
+      </div>
+      <button class="run-btn" id="runBtn" onclick="runAnalysis()">🔍 ANALYSER</button>
+      <button class="dl-btn" id="dlBtn" onclick="downloadReport()">⬇ TÉLÉCHARGER RAPPORT</button>
+    </div>
+  </div>
+
+  <div class="progress-box" id="progressBox">
+    <div class="progress-label" id="progressLabel">Initialisation...</div>
+    <div class="prog-bar"><div class="prog-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="prog-text" id="progressText">0 / 12 paires</div>
+  </div>
+
+  <div class="results-box" id="resultsBox"></div>
+</div>
+
+<script>
+const PAIRS=['EUR/USD','GBP/USD','USD/JPY','USD/CHF','AUD/USD','NZD/USD','USD/CAD','EUR/GBP','EUR/JPY','GBP/JPY','EUR/CHF','AUD/JPY'];
+const FLAGS={'EUR/USD':'🇪🇺🇺🇸','GBP/USD':'🇬🇧🇺🇸','USD/JPY':'🇺🇸🇯🇵','USD/CHF':'🇺🇸🇨🇭','AUD/USD':'🇦🇺🇺🇸','NZD/USD':'🇳🇿🇺🇸','USD/CAD':'🇺🇸🇨🇦','EUR/GBP':'🇪🇺🇬🇧','EUR/JPY':'🇪🇺🇯🇵','GBP/JPY':'🇬🇧🇯🇵','EUR/CHF':'🇪🇺🇨🇭','AUD/JPY':'🇦🇺🇯🇵'};
+let REPORT_DATA=null;
+
+// ─── 15 INDICATEURS ──────────────────────────────────────────────────────────
+function calcEMA(d,p){if(d.length<p)return[d[d.length-1]];const k=2/(p+1);let e=d.slice(0,p).reduce((a,b)=>a+b,0)/p;const r=[e];for(let i=p;i<d.length;i++){e=d[i]*k+e*(1-k);r.push(e)}return r}
+
+// 1. RSI
+function getRSI(c,p=14){if(c.length<p+1)return 50;let g=0,l=0;for(let i=1;i<=p;i++){const d=c[i]-c[i-1];if(d>0)g+=d;else l-=d}let ag=g/p,al=l/p;let rsi=50;for(let i=p;i<c.length;i++){if(i>p){const d=c[i]-c[i-1];ag=(ag*(p-1)+Math.max(d,0))/p;al=(al*(p-1)+Math.max(-d,0))/p}rsi=100-100/(1+(al===0?100:ag/al))}return Math.round(rsi)}
+function catRSI(v){return v<30?'SURVENDU EXTRÊME':v<40?'SURVENDU':v<45?'BAS':v>70?'SURACHETÉ EXTRÊME':v>60?'SURACHETÉ':v>55?'HAUT':'NEUTRE'}
+
+// 2. MACD
+function getMACD(c){const e12=calcEMA(c,12),e26=calcEMA(c,26);const ml=e12.slice(e12.length-e26.length).map((v,i)=>v-e26[i]);const sl=calcEMA(ml,9);const h=ml.slice(ml.length-sl.length).map((v,i)=>v-sl[i]);const last=h[h.length-1],prev=h[h.length-2]||0;return{signal:ml[ml.length-1]>sl[sl.length-1]?'BULLISH':'BEARISH',hist:last>0?'POSITIF':'NÉGATIF',momentum:last>prev?'ACCÉLÉRANT':'DÉCÉLÉRANT'}}
+
+// 3. Bollinger Position
+function getBB(c,p=20){const s=c.slice(-p),m=s.reduce((a,b)=>a+b,0)/p;const std=Math.sqrt(s.reduce((a,b)=>a+Math.pow(b-m,2),0)/p);const price=c[c.length-1];const pct=std===0?50:((price-(m-2*std))/((m+2*std)-(m-2*std)))*100;const v=Math.round(pct);return{pct:v,cat:v<10?'SOUS BANDE BASSE':v<25?'BASSE':v>90?'SUR BANDE HAUTE':v>75?'HAUTE':'CENTRE'}}
+
+// 4. Stochastique
+function getStoch(h,l,c,kp=14,dp=3){const k=[];for(let i=kp-1;i<c.length;i++){const hh=Math.max(...h.slice(i-kp+1,i+1)),ll=Math.min(...l.slice(i-kp+1,i+1));k.push(hh===ll?50:((c[i]-ll)/(hh-ll))*100)}const d=[];for(let i=dp-1;i<k.length;i++)d.push(k.slice(i-dp+1,i+1).reduce((a,b)=>a+b,0)/dp);const kv=Math.round(k[k.length-1]),dv=Math.round(d[d.length-1]);return{k:kv,cat:kv<20?'SURVENDU':kv>80?'SURACHETÉ':kv<40?'BAS':kv>60?'HAUT':'NEUTRE',cross:kv>dv?'K>D BULL':'K<D BEAR'}}
+
+// 5. ADX
+function getADX(h,l,c,p=14){const tr=[],pm=[],mm=[];for(let i=1;i<c.length;i++){tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])));const u=h[i]-h[i-1],dv=l[i-1]-l[i];pm.push(u>dv&&u>0?u:0);mm.push(dv>u&&dv>0?dv:0)}const sTR=tr.slice(-p).reduce((a,b)=>a+b,0)||1;const sP=pm.slice(-p).reduce((a,b)=>a+b,0);const sM=mm.slice(-p).reduce((a,b)=>a+b,0);const pDI=(sP/sTR)*100,mDI=(sM/sTR)*100;const adx=Math.round(Math.abs(pDI-mDI)/(pDI+mDI+0.0001)*100);return{adx,dir:pDI>mDI?'HAUSSIER':'BAISSIER',strength:adx>30?'TRÈS FORT':adx>20?'FORT':adx>15?'MOYEN':'FAIBLE'}}
+
+// 6. EMA Cross
+function getEMACross(c){const e50=calcEMA(c,50),e200=calcEMA(c,200);const v50=e50[e50.length-1],v200=e200[e200.length-1];const price=c[c.length-1];return{trend:v50>v200?'UP':'DOWN',pricevs50:price>v50?'AU DESSUS EMA50':'EN DESSOUS EMA50',cross:v50>v200?'GOLDEN CROSS':'DEATH CROSS'}}
+
+// 7. ATR (volatilité relative)
+function getATR(h,l,c,p=14){const tr=[];for(let i=1;i<c.length;i++)tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])));const atr=tr.slice(-p).reduce((a,b)=>a+b,0)/p;const atr50=tr.slice(-50).reduce((a,b)=>a+b,0)/50;const ratio=atr/atr50;return{cat:ratio>1.3?'HAUTE VOLATILITÉ':ratio>1.1?'VOLATILITÉ ÉLEVÉE':ratio<0.7?'TRÈS FAIBLE VOLATILITÉ':ratio<0.9?'FAIBLE VOLATILITÉ':'NORMALE'}}
+
+// 8. CCI (Commodity Channel Index)
+function getCCI(h,l,c,p=20){const tp=[];for(let i=0;i<c.length;i++)tp.push((h[i]+l[i]+c[i])/3);const sl=tp.slice(-p);const m=sl.reduce((a,b)=>a+b,0)/p;const md=sl.reduce((a,b)=>a+Math.abs(b-m),0)/p;const cci=md===0?0:(tp[tp.length-1]-m)/(0.015*md);const v=Math.round(cci);return{value:v,cat:v>200?'EXTRÊMEMENT SURACHETÉ':v>100?'SURACHETÉ':v<-200?'EXTRÊMEMENT SURVENDU':v<-100?'SURVENDU':v>0?'HAUSSIER':'BAISSIER'}}
+
+// 9. Williams %R
+function getWR(h,l,c,p=14){const hh=Math.max(...h.slice(-p));const ll=Math.min(...l.slice(-p));const wr=hh===ll?-50:((hh-c[c.length-1])/(hh-ll))*-100;const v=Math.round(wr);return{value:v,cat:v>-20?'SURACHETÉ':v<-80?'SURVENDU':v>-40?'HAUT':'BAS'}}
+
+// 10. Momentum (ROC simplifié)
+function getMomentum(c,p=10){if(c.length<p+1)return{value:0,cat:'NEUTRE'};const mom=((c[c.length-1]-c[c.length-1-p])/c[c.length-1-p])*100;const v=parseFloat(mom.toFixed(2));return{value:v,cat:v>0.5?'FORT HAUSSIER':v>0.1?'HAUSSIER':v<-0.5?'FORT BAISSIER':v<-0.1?'BAISSIER':'NEUTRE'}}
+
+// 11. ROC (Rate of Change)
+function getROC(c,p=14){if(c.length<p+1)return{value:0,cat:'NEUTRE'};const roc=((c[c.length-1]-c[c.length-1-p])/c[c.length-1-p])*100;const v=parseFloat(roc.toFixed(2));return{value:v,cat:v>1?'FORTE ACCÉLÉRATION':v>0.2?'ACCÉLÉRATION':v<-1?'FORTE DÉCÉLÉRATION':v<-0.2?'DÉCÉLÉRATION':'STABLE'}}
+
+// 12. OBV direction
+function getOBV(c,v_dummy){// Pas de volume sur Forex — on simule avec body size
+const obvArr=[0];for(let i=1;i<c.length;i++){const body=Math.abs(c[i]-c[i-1])*10000;obvArr.push(obvArr[i-1]+(c[i]>c[i-1]?body:-body))}const last=obvArr[obvArr.length-1];const prev10=obvArr[obvArr.length-11]||0;return{trend:last>prev10?'HAUSSE OBV':'BAISSE OBV',cat:last>prev10?'PRESSION ACHAT':'PRESSION VENTE'}}
+
+// 13. Parabolic SAR (simplifié)
+function getPSAR(h,l,c){const af0=0.02,afMax=0.2;let bull=true,sar=l[0],ep=h[0],af=af0;for(let i=1;i<c.length;i++){const prevSar=sar;sar=sar+af*(ep-sar);if(bull){if(h[i]>ep){ep=h[i];af=Math.min(af+af0,afMax)}if(c[i]<sar){bull=false;sar=ep;ep=l[i];af=af0}}else{if(l[i]<ep){ep=l[i];af=Math.min(af+af0,afMax)}if(c[i]>sar){bull=true;sar=ep;ep=h[i];af=af0}}}return{trend:bull?'BULLISH':'BEARISH',cat:bull?'AU DESSUS SAR':'EN DESSOUS SAR'}}
+
+// 14. Ichimoku simplifié (Tenkan/Kijun)
+function getIchimoku(h,l,c){const tenkan=p=>{const hh=Math.max(...h.slice(-p)),ll=Math.min(...l.slice(-p));return(hh+ll)/2};const kijun=p=>{const hh=Math.max(...h.slice(-p)),ll=Math.min(...l.slice(-p));return(hh+ll)/2};if(h.length<52)return{cat:'NEUTRE',cloud:'NEUTRE'};const t=tenkan(9),k=kijun(26);const price=c[c.length-1];const spanA=(t+k)/2;const hh52=Math.max(...h.slice(-52)),ll52=Math.min(...l.slice(-52));const spanB=(hh52+ll52)/2;const aboveCloud=price>Math.max(spanA,spanB);const belowCloud=price<Math.min(spanA,spanB);return{tenkanVsKijun:t>k?'TK BULL':'TK BEAR',cloud:aboveCloud?'AU DESSUS NUAGE':belowCloud?'EN DESSOUS NUAGE':'DANS NUAGE',cat:aboveCloud&&t>k?'FORT BULLISH':belowCloud&&t<k?'FORT BEARISH':t>k?'BULLISH':t<k?'BEARISH':'NEUTRE'}}
+
+// 15. Position 52 semaines (high/low channel)
+function get52W(h,l,c){const hh=Math.max(...h.slice(-500>h.length?0:h.length-500));const ll=Math.min(...l.slice(-500>l.length?0:l.length-500));const price=c[c.length-1];const pct=hh===ll?50:Math.round((price-ll)/(hh-ll)*100);return{pct,cat:pct>80?'PROCHE SOMMET 52S':pct>60?'HAUT 52S':pct<20?'PROCHE CREUX 52S':pct<40?'BAS 52S':'MILIEU 52S'}}
+
+// ─── SNAPSHOT COMPLET ─────────────────────────────────────────────────────────
+function getSnapshot(closes,highs,lows,idx){
+  if(idx<210)return null;
+  const c=closes.slice(0,idx+1),h=highs.slice(0,idx+1),l=lows.slice(0,idx+1);
+  return{
+    rsi:getRSI(c),
+    macd:getMACD(c),
+    bb:getBB(c),
+    stoch:getStoch(h,l,c),
+    adx:getADX(h,l,c),
+    ema:getEMACross(c),
+    atr:getATR(h,l,c),
+    cci:getCCI(h,l,c),
+    wr:getWR(h,l,c),
+    mom:getMomentum(c),
+    roc:getROC(c),
+    obv:getOBV(c),
+    psar:getPSAR(h,l,c),
+    ichi:getIchimoku(h,l,c),
+    w52:get52W(h,l,c)
+  };
+}
+
+// Aplatir snapshot en features catégorielles
+function flattenSnap(snap){
+  return{
+    'RSI Zone':catRSI(snap.rsi),
+    'MACD Signal':snap.macd.signal,
+    'MACD Histogram':snap.macd.hist,
+    'MACD Momentum':snap.macd.momentum,
+    'Bollinger Zone':snap.bb.cat,
+    'Stoch Zone':snap.stoch.cat,
+    'Stoch Cross':snap.stoch.cross,
+    'ADX Force':snap.adx.strength,
+    'ADX Direction':snap.adx.dir,
+    'EMA Tendance':snap.ema.trend,
+    'EMA Cross':snap.ema.cross,
+    'Prix vs EMA50':snap.ema.pricevs50,
+    'ATR Volatilité':snap.atr.cat,
+    'CCI Zone':snap.cci.cat,
+    'Williams %R':snap.wr.cat,
+    'Momentum':snap.mom.cat,
+    'ROC':snap.roc.cat,
+    'OBV Pression':snap.obv.cat,
+    'Parabolic SAR':snap.psar.cat,
+    'Ichimoku':snap.ichi.cat,
+    'Ichimoku Nuage':snap.ichi.cloud,
+    'Position 52S':snap.w52.cat,
+  };
+}
+
+// ─── ANALYSE PRINCIPALE ───────────────────────────────────────────────────────
+async function runAnalysis(){
+  const apiKey=document.getElementById('apiKey').value.trim();
+  const candleCount=parseInt(document.getElementById('candleCount').value)||500;
+  const pipThreshold=parseInt(document.getElementById('pipThreshold').value)||80;
+  if(!apiKey){alert('Veuillez entrer votre clé API');return}
+
+  document.getElementById('runBtn').disabled=true;
+  document.getElementById('dlBtn').style.display='none';
+  document.getElementById('progressBox').style.display='block';
+  document.getElementById('resultsBox').style.display='none';
+  document.getElementById('resultsBox').innerHTML='';
+
+  const allPatternsUP=[],allPatternsDOWN=[];
+  const pairResults=[];
+  const currentSnapshots=[];
+  let totalEvents=0;
+
+  for(let pi=0;pi<PAIRS.length;pi++){
+    const pair=PAIRS[pi];
+    document.getElementById('progressFill').style.width=Math.round((pi/PAIRS.length)*100)+'%';
+    document.getElementById('progressLabel').textContent=`Analyse de ${pair} — calcul des 15 indicateurs...`;
+    document.getElementById('progressText').textContent=`${pi} / ${PAIRS.length} paires analysées`;
+
+    try{
+      const url=`https://api.twelvedata.com/time_series?symbol=${pair}&interval=4h&outputsize=${candleCount}&apikey=${apiKey}`;
+      const resp=await fetch(url);const data=await resp.json();
+      if(!data.values||data.status==='error'){await sleep(8000);continue}
+      const candles=data.values.reverse();
+      const closes=candles.map(c=>parseFloat(c.close));
+      const highs=candles.map(c=>parseFloat(c.high));
+      const lows=candles.map(c=>parseFloat(c.low));
+      const isJPY=pair.includes('JPY');
+      const pipDiv=isJPY?0.01:0.0001;
+      const thr=pipThreshold*pipDiv;
+
+      const pairUP=[],pairDOWN=[];
+      const used=new Set();
+
+      for(let i=215;i<candles.length-16;i++){
+        const key=Math.floor(i/8);
+        if(used.has(key))continue;
+        const base=closes[i];
+        let maxUp=0,maxDown=0;
+        for(let j=1;j<=16;j++){
+          if(i+j>=closes.length)break;
+          const mv=closes[i+j]-base;
+          if(mv>maxUp)maxUp=mv;
+          if(mv<maxDown)maxDown=mv;
+        }
+        const snap=getSnapshot(closes,highs,lows,i-4);
+        if(!snap)continue;
+        const flat=flattenSnap(snap);
+        if(maxUp>=thr&&Math.abs(maxDown)<thr*0.5){
+          allPatternsUP.push(flat);pairUP.push({flat,snap,pips:Math.round(maxUp/pipDiv),date:candles[i].datetime});
+          used.add(key);used.add(key+1);used.add(key+2);totalEvents++;
+        }else if(Math.abs(maxDown)>=thr&&maxUp<thr*0.5){
+          allPatternsDOWN.push(flat);pairDOWN.push({flat,snap,pips:Math.round(Math.abs(maxDown)/pipDiv),date:candles[i].datetime});
+          used.add(key);used.add(key+1);used.add(key+2);totalEvents++;
+        }
+      }
+
+      const currentSnap=getSnapshot(closes,highs,lows,closes.length-1);
+      if(currentSnap)currentSnapshots.push({pair,snap:currentSnap,flat:flattenSnap(currentSnap),pairUP,pairDOWN});
+      pairResults.push({pair,up:pairUP.length,down:pairDOWN.length,pairUP,pairDOWN});
+    }catch(e){console.error(pair,e)}
+    await sleep(8000);
+  }
+
+  document.getElementById('progressFill').style.width='100%';
+  document.getElementById('progressLabel').textContent='Calcul du classement des indicateurs...';
+
+  // Calculer dominance par feature
+  const features=Object.keys(allPatternsUP[0]||{});
+  const ranking=calcRanking(features,allPatternsUP,allPatternsDOWN);
+  const currentSigs=calcCurrentSignals(currentSnapshots,ranking);
+
+  REPORT_DATA={ranking,currentSigs,pairResults,allPatternsUP,allPatternsDOWN,pipThreshold,candleCount,generatedAt:new Date().toISOString()};
+  renderResults(ranking,currentSigs,pairResults,allPatternsUP.length,allPatternsDOWN.length,pipThreshold);
+  document.getElementById('runBtn').disabled=false;
+  document.getElementById('dlBtn').style.display='block';
+}
+
+// ─── CLASSEMENT DES INDICATEURS ──────────────────────────────────────────────
+function calcRanking(features,up,down){
+  if(!up.length&&!down.length)return[];
+  return features.map(feat=>{
+    const countUp={},countDown={};
+    up.forEach(p=>{const v=p[feat];countUp[v]=(countUp[v]||0)+1});
+    down.forEach(p=>{const v=p[feat];countDown[v]=(countDown[v]||0)+1});
+
+    // Valeur dominante pour UP
+    const upEntries=Object.entries(countUp).sort((a,b)=>b[1]-a[1]);
+    const downEntries=Object.entries(countDown).sort((a,b)=>b[1]-a[1]);
+    const upDom=upEntries[0];
+    const downDom=downEntries[0];
+
+    // Score de prédictivité = différence entre les deux distributions
+    const upDomPct=upDom?Math.round(upDom[1]/up.length*100):0;
+    const downDomPct=downDom?Math.round(downDom[1]/down.length*100):0;
+
+    // Divergence : est-ce que les valeurs UP et DOWN sont différentes ?
+    const divergence=upDom&&downDom&&upDom[0]!==downDom[0]?Math.round((upDomPct+downDomPct)/2):Math.round(Math.max(upDomPct,downDomPct)*0.5);
+
+    return{
+      feature:feat,
+      upDominant:upDom?upDom[0]:'—',upDomPct,
+      downDominant:downDom?downDom[0]:'—',downDomPct,
+      divergence,
+      predictive:upDom&&downDom&&upDom[0]!==downDom[0],
+      strength:divergence>=65?'FORT':divergence>=50?'MOYEN':'FAIBLE',
+      upEntries,downEntries
+    };
+  }).sort((a,b)=>b.divergence-a.divergence);
+}
+
+// ─── SIGNAUX ACTUELS ─────────────────────────────────────────────────────────
+function calcCurrentSignals(currentSnapshots,ranking){
+  const topFeats=ranking.filter(r=>r.predictive&&r.divergence>=50).slice(0,10);
+  return currentSnapshots.map(cs=>{
+    let upScore=0,downScore=0,matchedUp=[],matchedDown=[];
+    topFeats.forEach(r=>{
+      const val=cs.flat[r.feature];
+      if(val===r.upDominant){upScore+=r.divergence;matchedUp.push(`${r.feature}: ${val}`)}
+      if(val===r.downDominant){downScore+=r.divergence;matchedDown.push(`${r.feature}: ${val}`)}
+    });
+    const maxScore=topFeats.reduce((s,r)=>s+r.divergence,0)||1;
+    const upPct=Math.round(upScore/maxScore*100);
+    const downPct=Math.round(downScore/maxScore*100);
+    const dir=upPct>=downPct?'UP':'DOWN';
+    const score=Math.max(upPct,downPct);
+    return{pair:cs.pair,dir,score,upPct,downPct,matched:dir==='UP'?matchedUp:matchedDown,snap:cs.snap};
+  }).filter(s=>s.score>=45).sort((a,b)=>b.score-a.score);
+}
+
+// ─── RENDU ────────────────────────────────────────────────────────────────────
+function renderResults(ranking,sigs,pairResults,totalUP,totalDOWN,pipThreshold){
+  const box=document.getElementById('resultsBox');
+  box.style.display='block';
+
+  const top5=ranking.slice(0,5);
+  const bottom5=ranking.slice(-5);
+
+  box.innerHTML=`
+    <div class="sec-title">📊 RÉSUMÉ — ${totalUP+totalDOWN} MOUVEMENTS ANALYSÉS</div>
+    <div class="stats-grid">
+      <div class="stat-card neu"><div class="stat-val">${totalUP+totalDOWN}</div><div class="stat-label">ÉVÉNEMENTS</div></div>
+      <div class="stat-card up"><div class="stat-val">${totalUP}</div><div class="stat-label">HAUSSES ≥${pipThreshold}p</div></div>
+      <div class="stat-card down"><div class="stat-val">${totalDOWN}</div><div class="stat-label">BAISSES ≥${pipThreshold}p</div></div>
+      <div class="stat-card neu"><div class="stat-val">${ranking.filter(r=>r.predictive&&r.divergence>=65).length}</div><div class="stat-label">IND. FORTS</div></div>
+      <div class="stat-card neu"><div class="stat-val">${sigs.length}</div><div class="stat-label">SIGNAUX ACTUELS</div></div>
+    </div>
+
+    ${sigs.length>0?`
+    <div class="signal-box">
+      <div class="signal-title">🚨 SIGNAUX ACTUELS BASÉS SUR LES PATTERNS RÉELS</div>
+      ${sigs.map(s=>`
+        <div class="signal-item">
+          <span class="signal-pair">${FLAGS[s.pair]||''} ${s.pair}</span>
+          <span class="signal-dir ${s.dir==='UP'?'up':'down'}">${s.dir==='UP'?'▲ HAUSSE':'▼ BAISSE'}</span>
+          <span class="signal-score">${s.score}% match</span>
+          <div class="signal-inds">Confirmé par : ${s.matched.slice(0,4).join(' | ')}</div>
+        </div>`).join('')}
+    </div>`:''}
+
+    <div class="sec-title">🏆 CLASSEMENT COMPLET DES ${ranking.length} FEATURES — DU PLUS PRÉDICTIF AU MOINS PRÉDICTIF</div>
+    <div class="rank-table">
+      <div class="rank-header">
+        <span>#</span><span>INDICATEUR / FEATURE</span>
+        <span>SIGNAL FORT (%)</span><span>AVANT HAUSSE</span>
+        <span>AVANT BAISSE</span><span>DIVERGENCE</span><span>VERDICT</span>
+      </div>
+      ${ranking.map((r,i)=>`
+        <div class="rank-row">
+          <span class="rank-num">${i+1}</span>
+          <span style="font-weight:700;color:${r.divergence>=65?'var(--buy)':r.divergence>=50?'var(--gold)':'var(--muted)'}">${r.feature}</span>
+          <div class="score-bar-wrap">
+            <div class="score-bar"><div class="score-fill" style="width:${r.divergence}%;background:${r.divergence>=65?'var(--buy)':r.divergence>=50?'var(--gold)':'var(--sell)'}"></div></div>
+            <span style="font-size:11px;color:${r.divergence>=65?'var(--buy)':r.divergence>=50?'var(--gold)':'var(--sell)'}">${r.divergence}%</span>
+          </div>
+          <span style="color:var(--buy);font-size:11px">${r.upDominant}<span style="color:var(--muted)"> ${r.upDomPct}%</span></span>
+          <span style="color:var(--sell);font-size:11px">${r.downDominant}<span style="color:var(--muted)"> ${r.downDomPct}%</span></span>
+          <span style="font-weight:700;font-size:12px;color:${r.divergence>=65?'var(--buy)':r.divergence>=50?'var(--gold)':'var(--sell)'}">${r.divergence}%</span>
+          <span class="badge ${r.strength==='FORT'?'strong':r.strength==='MOYEN'?'medium':'weak'}">${r.strength}</span>
+        </div>`).join('')}
+    </div>
+
+    <div class="sec-title">✅ TOP 5 — INDICATEURS LES PLUS PRÉDICTIFS</div>
+    <div class="detail-grid">
+      ${top5.map((r,i)=>`
+        <div class="detail-card" style="border-color:${r.divergence>=65?'rgba(0,255,136,.3)':'rgba(255,215,0,.3)'}">
+          <div class="detail-title" style="color:${r.divergence>=65?'var(--buy)':'var(--gold)'}">#${i+1} — ${r.feature}</div>
+          <div class="detail-sub">Score prédictif : ${r.divergence}% — ${r.strength}</div>
+          <div class="detail-row"><span class="detail-label">Avant une HAUSSE</span><span class="detail-val" style="color:var(--buy)">${r.upDominant} <span class="detail-pct">${r.upDomPct}% des cas</span></span></div>
+          <div class="detail-row"><span class="detail-label">Avant une BAISSE</span><span class="detail-val" style="color:var(--sell)">${r.downDominant} <span class="detail-pct">${r.downDomPct}% des cas</span></span></div>
+          <div class="detail-row"><span class="detail-label">Divergence UP/DOWN</span><span class="detail-val" style="color:var(--accent)">${r.predictive?'OUI — Distinctif ✓':'NON — Similaire'}</span></div>
+        </div>`).join('')}
+    </div>
+
+    <div class="sec-title">❌ BOTTOM 5 — INDICATEURS LES MOINS PRÉDICTIFS (à reconsidérer)</div>
+    <div class="detail-grid">
+      ${bottom5.map((r,i)=>`
+        <div class="detail-card" style="border-color:rgba(255,68,102,.2)">
+          <div class="detail-title" style="color:var(--sell)">#${ranking.length-4+i} — ${r.feature}</div>
+          <div class="detail-sub">Score prédictif : ${r.divergence}% — FAIBLE</div>
+          <div class="detail-row"><span class="detail-label">Avant une HAUSSE</span><span class="detail-val">${r.upDominant} <span class="detail-pct">${r.upDomPct}%</span></span></div>
+          <div class="detail-row"><span class="detail-label">Avant une BAISSE</span><span class="detail-val">${r.downDominant} <span class="detail-pct">${r.downDomPct}%</span></span></div>
+          <div class="detail-row"><span class="detail-label">Verdict</span><span class="detail-val" style="color:var(--sell)">PEU UTILE pour cette stratégie</span></div>
+        </div>`).join('')}
+    </div>
+  `;
+}
+
+// ─── TÉLÉCHARGEMENT RAPPORT ───────────────────────────────────────────────────
+function downloadReport(){
+  if(!REPORT_DATA){alert('Lancez d\'abord l\'analyse');return}
+  const d=REPORT_DATA;
+  let csv='FOREX PATTERN FINDER V2 — RAPPORT COMPLET\n';
+  csv+=`Généré le : ${new Date(d.generatedAt).toLocaleString('fr-FR')}\n`;
+  csv+=`Seuil : ${d.pipThreshold} pips | Bougies : ${d.candleCount}\n`;
+  csv+=`Mouvements UP : ${d.allPatternsUP.length} | Mouvements DOWN : ${d.allPatternsDOWN.length}\n\n`;
+
+  csv+='═══════════════════════════════════════════════════\n';
+  csv+='CLASSEMENT COMPLET DES INDICATEURS\n';
+  csv+='═══════════════════════════════════════════════════\n';
+  csv+='Rang,Indicateur/Feature,Score Prédictif,Avant Hausse (valeur),Avant Hausse (%),Avant Baisse (valeur),Avant Baisse (%),Divergence,Verdict\n';
+  d.ranking.forEach((r,i)=>{
+    csv+=`${i+1},"${r.feature}",${r.divergence}%,"${r.upDominant}",${r.upDomPct}%,"${r.downDominant}",${r.downDomPct}%,${r.divergence}%,${r.strength}\n`;
+  });
+
+  csv+='\n═══════════════════════════════════════════════════\n';
+  csv+='SIGNAUX ACTUELS\n';
+  csv+='═══════════════════════════════════════════════════\n';
+  csv+='Paire,Direction,Score Match,Indicateurs confirmateurs\n';
+  d.currentSigs.forEach(s=>{
+    csv+=`${s.pair},${s.dir==='UP'?'HAUSSE':'BAISSE'},${s.score}%,"${s.matched.join(' | ')}"\n`;
+  });
+
+  csv+='\n═══════════════════════════════════════════════════\n';
+  csv+='DÉTAIL PAR PAIRE\n';
+  csv+='═══════════════════════════════════════════════════\n';
+  csv+='Paire,Hausses détectées,Baisses détectées\n';
+  d.pairResults.forEach(p=>{
+    csv+=`${p.pair},${p.up},${p.down}\n`;
+  });
+
+  csv+='\n═══════════════════════════════════════════════════\n';
+  csv+='INTERPRÉTATION\n';
+  csv+='═══════════════════════════════════════════════════\n';
+  csv+='Score >= 65% : Indicateur FORT — à intégrer en priorité\n';
+  csv+='Score 50-64% : Indicateur MOYEN — utile en complément\n';
+  csv+='Score < 50% : Indicateur FAIBLE — peu prédictif pour cette stratégie\n';
+  csv+='Divergence = différence entre le comportement AVANT hausse vs AVANT baisse\n';
+  csv+='Plus la divergence est élevée, plus l\'indicateur distingue les deux directions\n';
+
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`ForexPatternReport_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+window.onload=()=>{const k=localStorage.getItem('forex_api_key');if(k)document.getElementById('apiKey').value=k}
+</script>
+</body>
+</html>
