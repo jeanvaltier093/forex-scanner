@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forex Pattern Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#080c14;--bg2:#0d1320;--bg3:#111827;--border:#1e2d45;--accent:#00d4ff;--buy:#00ff88;--sell:#ff4466;--text:#e8edf5;--muted:#5a7090;--gold:#ffd700;--purple:#a855f7}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:20px}
+.app{max-width:1200px;margin:0 auto}
+.header{display:flex;align-items:center;gap:16px;padding:20px 0;border-bottom:1px solid var(--border);margin-bottom:24px}
+.logo-icon{font-size:28px;color:var(--purple);filter:drop-shadow(0 0 10px var(--purple))}
+.logo-text{font-size:22px;font-weight:800;letter-spacing:3px}
+.accent{color:var(--purple)}
+.subtitle{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:4px}
+.setup-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px}
+.setup-box h2{font-size:14px;font-weight:800;letter-spacing:2px;color:var(--purple);margin-bottom:16px}
+.input-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.input-group{display:flex;flex-direction:column;gap:6px;flex:1;min-width:180px}
+.input-group label{font-size:10px;color:var(--muted);letter-spacing:2px;font-family:'Space Mono',monospace}
+.input-group input{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:6px;font-family:'Space Mono',monospace;font-size:13px;outline:none;width:100%}
+.input-group input:focus{border-color:var(--purple)}
+.run-btn{background:var(--purple);color:white;border:none;padding:12px 28px;border-radius:6px;cursor:pointer;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:2px;white-space:nowrap;transition:all .2s}
+.run-btn:hover{opacity:.85}
+.run-btn:disabled{opacity:.4;cursor:not-allowed}
+.info-box{background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.3);border-radius:8px;padding:16px;margin-bottom:24px;font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);line-height:1.8}
+.info-box strong{color:var(--purple)}
+.progress-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px;display:none}
+.progress-label{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:8px}
+.progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.progress-fill{height:100%;background:var(--purple);border-radius:2px;transition:width .3s}
+.progress-text{font-family:'Space Mono',monospace;font-size:11px;color:var(--purple)}
+.results-box{display:none}
+.section-title{font-family:'Space Mono',monospace;font-size:11px;color:var(--purple);letter-spacing:2px;margin-bottom:12px;margin-top:24px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center}
+.stat-val{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;margin-bottom:4px}
+.stat-label{font-size:9px;color:var(--muted);letter-spacing:2px}
+.stat-card.up .stat-val{color:var(--buy)}
+.stat-card.down .stat-val{color:var(--sell)}
+.stat-card.neutral .stat-val{color:var(--purple)}
+.pattern-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:24px}
+.pattern-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden}
+.pattern-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.pattern-card.up::before{background:linear-gradient(90deg,var(--buy),transparent)}
+.pattern-card.down::before{background:linear-gradient(90deg,var(--sell),transparent)}
+.pattern-card.signal::before{background:linear-gradient(90deg,var(--purple),transparent)}
+.pattern-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.pattern-pair{font-size:16px;font-weight:800;letter-spacing:2px}
+.pattern-dir{padding:4px 10px;border-radius:4px;font-family:'Space Mono',monospace;font-size:11px;font-weight:700}
+.pattern-dir.up{background:rgba(0,255,136,.15);color:var(--buy);border:1px solid var(--buy)}
+.pattern-dir.down{background:rgba(255,68,102,.15);color:var(--sell);border:1px solid var(--sell)}
+.pattern-dir.signal{background:rgba(168,85,247,.15);color:var(--purple);border:1px solid var(--purple)}
+.indicator-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.ind-item{background:var(--bg3);border-radius:6px;padding:8px 10px}
+.ind-name{font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:3px;font-family:'Space Mono',monospace}
+.ind-val{font-family:'Space Mono',monospace;font-size:12px;font-weight:700}
+.ind-val.bullish{color:var(--buy)}
+.ind-val.bearish{color:var(--sell)}
+.ind-val.neutral{color:var(--muted)}
+.freq-bar{margin-top:12px}
+.freq-label{font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:4px;font-family:'Space Mono',monospace}
+.freq-track{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.freq-fill{height:100%;border-radius:3px}
+.freq-fill.up{background:var(--buy)}
+.freq-fill.down{background:var(--sell)}
+.freq-fill.signal{background:var(--purple)}
+.freq-pct{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;margin-top:4px}
+.alert-box{background:rgba(168,85,247,.1);border:1px solid var(--purple);border-radius:8px;padding:16px;margin-bottom:24px}
+.alert-title{font-family:'Space Mono',monospace;font-size:12px;color:var(--purple);letter-spacing:2px;margin-bottom:8px}
+.alert-item{font-family:'Space Mono',monospace;font-size:11px;color:var(--text);padding:6px 0;border-bottom:1px solid var(--border)}
+.alert-item:last-child{border-bottom:none}
+.match-score{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;background:rgba(168,85,247,.2);color:var(--purple);margin-left:8px}
+.table-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:24px}
+.tbl-h{display:grid;grid-template-columns:1fr .7fr .7fr .7fr .7fr .7fr .7fr .7fr;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:9px;color:var(--muted);letter-spacing:2px;font-family:'Space Mono',monospace}
+.tbl-r{display:grid;grid-template-columns:1fr .7fr .7fr .7fr .7fr .7fr .7fr .7fr;padding:10px 16px;border-bottom:1px solid var(--border);font-size:11px;font-family:'Space Mono',monospace;align-items:center}
+.tbl-r:last-child{border-bottom:none}
+.tbl-r:hover{background:var(--bg3)}
+.tbl-r.up{border-left:2px solid var(--buy)}
+.tbl-r.down{border-left:2px solid var(--sell)}
+@media(max-width:768px){
+  .tbl-h,.tbl-r{grid-template-columns:1fr .7fr .7fr .7fr .7fr;font-size:10px}
+  .tbl-h span:nth-child(n+6),.tbl-r span:nth-child(n+6){display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <span class="logo-icon">◈</span>
+    <div>
+      <div class="logo-text">PATTERN<span class="accent">FINDER</span></div>
+      <div class="subtitle">DÉTECTION DE PATTERNS PAR ANALYSE DE L'HISTORIQUE RÉEL</div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>Comment ça fonctionne :</strong><br>
+    1. L'outil analyse 500 bougies historiques (83 jours) par paire<br>
+    2. Il repère tous les mouvements significatifs (≥ 80 pips en 1-4 jours)<br>
+    3. Il enregistre l'état exact des indicateurs <strong>4 bougies avant</strong> chaque mouvement<br>
+    4. Il calcule les <strong>patterns récurrents</strong> — quels indicateurs prédisaient vraiment la hausse/baisse<br>
+    5. Il compare le <strong>marché actuel</strong> à ces patterns et affiche un score de ressemblance<br>
+    <br>
+    <strong>⚠️ C'est l'inverse du backtest</strong> — on construit la logique depuis l'historique, pas l'inverse
+  </div>
+
+  <div class="setup-box">
+    <h2>⚙️ CONFIGURATION</h2>
+    <div class="input-row">
+      <div class="input-group">
+        <label>CLÉ API TWELVE DATA</label>
+        <input type="text" id="apiKey" placeholder="Votre clé API..." />
+      </div>
+      <div class="input-group" style="max-width:160px">
+        <label>BOUGIES (4H)</label>
+        <input type="number" id="candleCount" value="500" min="300" max="800" />
+      </div>
+      <div class="input-group" style="max-width:160px">
+        <label>SEUIL PIPS</label>
+        <input type="number" id="pipThreshold" value="80" min="40" max="200" />
+      </div>
+      <button class="run-btn" id="runBtn" onclick="runAnalysis()">🔍 ANALYSER</button>
+    </div>
+  </div>
+
+  <div class="progress-box" id="progressBox">
+    <div class="progress-label" id="progressLabel">Initialisation...</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-text" id="progressText">0 / 12 paires</div>
+  </div>
+
+  <div class="results-box" id="resultsBox"></div>
+</div>
+
+<script>
+const PAIRS=['EUR/USD','GBP/USD','USD/JPY','USD/CHF','AUD/USD','NZD/USD','USD/CAD','EUR/GBP','EUR/JPY','GBP/JPY','EUR/CHF','AUD/JPY'];
+const FLAGS={'EUR/USD':'🇪🇺🇺🇸','GBP/USD':'🇬🇧🇺🇸','USD/JPY':'🇺🇸🇯🇵','USD/CHF':'🇺🇸🇨🇭','AUD/USD':'🇦🇺🇺🇸','NZD/USD':'🇳🇿🇺🇸','USD/CAD':'🇺🇸🇨🇦','EUR/GBP':'🇪🇺🇬🇧','EUR/JPY':'🇪🇺🇯🇵','GBP/JPY':'🇬🇧🇯🇵','EUR/CHF':'🇪🇺🇨🇭','AUD/JPY':'🇦🇺🇯🇵'};
+
+// ─── INDICATEURS ──────────────────────────────────────────────────────────────
+function calcEMA(d,p){const k=2/(p+1);let e=d.slice(0,p).reduce((a,b)=>a+b,0)/p;const r=[e];for(let i=p;i<d.length;i++){e=d[i]*k+e*(1-k);r.push(e)}return r}
+function calcRSIVal(c,p=14){let g=0,l=0;for(let i=1;i<=p;i++){const d=c[i]-c[i-1];if(d>0)g+=d;else l-=d}let ag=g/p,al=l/p;let rsi=0;for(let i=p;i<c.length;i++){if(i>p){const d=c[i]-c[i-1];ag=(ag*(p-1)+Math.max(d,0))/p;al=(al*(p-1)+Math.max(-d,0))/p}rsi=100-100/(1+(al===0?100:ag/al))}return rsi}
+function calcMACDVal(c){const e12=calcEMA(c,12),e26=calcEMA(c,26);const ml=e12.slice(e12.length-e26.length).map((v,i)=>v-e26[i]);const sl=calcEMA(ml,9);const h=ml.slice(ml.length-sl.length).map((v,i)=>v-sl[i]);return{hist:h[h.length-1],cross:ml[ml.length-1]>sl[sl.length-1]?'BUY':'SELL'}}
+function calcBBPos(c,p=20){const s=c.slice(-p),m=s.reduce((a,b)=>a+b,0)/p;const std=Math.sqrt(s.reduce((a,b)=>a+Math.pow(b-m,2),0)/p);const price=c[c.length-1];const pct=(price-(m-2*std))/((m+2*std)-(m-2*std))*100;return Math.round(pct)}
+function calcStochVal(h,l,c,kp=14,dp=3){const k=[];for(let i=kp-1;i<c.length;i++){const hh=Math.max(...h.slice(i-kp+1,i+1)),ll=Math.min(...l.slice(i-kp+1,i+1));k.push(hh===ll?50:((c[i]-ll)/(hh-ll))*100)}const d=[];for(let i=dp-1;i<k.length;i++)d.push(k.slice(i-dp+1,i+1).reduce((a,b)=>a+b,0)/dp);return{k:Math.round(k[k.length-1]),d:Math.round(d[d.length-1])}}
+function calcADXVal(h,l,c,p=14){const tr=[],pm=[],mm=[];for(let i=1;i<c.length;i++){tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])));const u=h[i]-h[i-1],dv=l[i-1]-l[i];pm.push(u>dv&&u>0?u:0);mm.push(dv>u&&dv>0?dv:0)}const sTR=tr.slice(-p).reduce((a,b)=>a+b,0);const sP=pm.slice(-p).reduce((a,b)=>a+b,0);const sM=mm.slice(-p).reduce((a,b)=>a+b,0);const pDI=(sP/sTR)*100,mDI=(sM/sTR)*100;return{adx:Math.round(Math.abs(pDI-mDI)/(pDI+mDI)*100),trend:pDI>mDI?'UP':'DOWN'}}
+function calcEMATrend(c){const e50=calcEMA(c,50);const e200=calcEMA(c,200);return e50[e50.length-1]>e200[e200.length-1]?'UP':'DOWN'}
+
+// ─── SNAPSHOT DES INDICATEURS À UN INSTANT T ─────────────────────────────────
+function getSnapshot(closes,highs,lows,idx){
+  if(idx<210)return null;
+  const c=closes.slice(0,idx+1);
+  const h=highs.slice(0,idx+1);
+  const l=lows.slice(0,idx+1);
+  return{
+    rsi:Math.round(calcRSIVal(c)),
+    macd:calcMACDVal(c),
+    bbPos:calcBBPos(c),
+    stoch:calcStochVal(h,l,c),
+    adx:calcADXVal(h,l,c),
+    emaTrend:calcEMATrend(c),
+    price:closes[idx]
+  }
+}
+
+// ─── CATÉGORISATION DU SNAPSHOT ──────────────────────────────────────────────
+function categorizeSnapshot(snap){
+  return{
+    rsiZone: snap.rsi<30?'TRÈS SURVENDU':snap.rsi<40?'SURVENDU':snap.rsi>70?'TRÈS SURACHETÉ':snap.rsi>60?'SURACHETÉ':'NEUTRE',
+    macdSignal: snap.macd.cross==='BUY'?'BULLISH':'BEARISH',
+    macdMomentum: snap.macd.hist>0?'POSITIF':'NÉGATIF',
+    bbZone: snap.bbPos<20?'BANDE BASSE':snap.bbPos>80?'BANDE HAUTE':snap.bbPos<40?'BAS':'HAUT',
+    stochZone: snap.stoch.k<20?'SURVENDU':snap.stoch.k>80?'SURACHETÉ':'NEUTRE',
+    adxStrength: snap.adx.adx>25?'FORT':snap.adx.adx>15?'MOYEN':'FAIBLE',
+    adxDir: snap.adx.trend,
+    emaTrend: snap.emaTrend
+  }
+}
+
+// ─── ANALYSE PRINCIPALE ───────────────────────────────────────────────────────
+async function runAnalysis(){
+  const apiKey=document.getElementById('apiKey').value.trim();
+  const candleCount=parseInt(document.getElementById('candleCount').value)||500;
+  const pipThreshold=parseInt(document.getElementById('pipThreshold').value)||80;
+  if(!apiKey){alert('Veuillez entrer votre clé API');return}
+
+  document.getElementById('runBtn').disabled=true;
+  document.getElementById('progressBox').style.display='block';
+  document.getElementById('resultsBox').style.display='none';
+
+  const allPatterns={UP:[],DOWN:[]};
+  const pairResults=[];
+  const currentSnapshots=[];
+
+  for(let pi=0;pi<PAIRS.length;pi++){
+    const pair=PAIRS[pi];
+    const pct=Math.round((pi/PAIRS.length)*100);
+    document.getElementById('progressFill').style.width=pct+'%';
+    document.getElementById('progressLabel').textContent=`Analyse des patterns sur ${pair}...`;
+    document.getElementById('progressText').textContent=`${pi} / ${PAIRS.length} paires`;
+
+    try{
+      const url=`https://api.twelvedata.com/time_series?symbol=${pair}&interval=4h&outputsize=${candleCount}&apikey=${apiKey}`;
+      const r=await fetch(url);const d=await r.json();
+      if(!d.values||d.status==='error'){await sleep(8000);continue}
+      const candles=d.values.reverse();
+      const closes=candles.map(c=>parseFloat(c.close));
+      const highs=candles.map(c=>parseFloat(c.high));
+      const lows=candles.map(c=>parseFloat(c.low));
+      const isJPY=pair.includes('JPY');
+      const pipDiv=isJPY?0.01:0.0001;
+      const threshold=pipThreshold*pipDiv;
+
+      let upMoves=0,downMoves=0;
+      const pairPatterns={UP:[],DOWN:[]};
+
+      // Repérer les mouvements significatifs
+      for(let i=215;i<candles.length-16;i++){
+        // Regarder les 16 prochaines bougies (2.7 jours)
+        let maxUp=0,maxDown=0;
+        const basePrice=closes[i];
+        for(let j=1;j<=16;j++){
+          if(i+j>=closes.length)break;
+          const move=closes[i+j]-basePrice;
+          if(move>maxUp)maxUp=move;
+          if(move<maxDown)maxDown=move;
+        }
+
+        // Snapshot 4 bougies AVANT le point de départ
+        const snapIdx=i-4;
+        const snap=getSnapshot(closes,highs,lows,snapIdx);
+        if(!snap)continue;
+        const cat=categorizeSnapshot(snap);
+
+        if(maxUp>=threshold&&Math.abs(maxDown)<threshold*0.6){
+          // Mouvement haussier significatif
+          allPatterns.UP.push(cat);
+          pairPatterns.UP.push({snap,cat,pips:Math.round(maxUp/pipDiv),date:candles[i].datetime});
+          upMoves++;
+        } else if(Math.abs(maxDown)>=threshold&&maxUp<threshold*0.6){
+          // Mouvement baissier significatif
+          allPatterns.DOWN.push(cat);
+          pairPatterns.DOWN.push({snap,cat,pips:Math.round(Math.abs(maxDown)/pipDiv),date:candles[i].datetime});
+          downMoves++;
+        }
+      }
+
+      // Snapshot actuel (dernière bougie)
+      const currentSnap=getSnapshot(closes,highs,lows,closes.length-1);
+      if(currentSnap){
+        const currentCat=categorizeSnapshot(currentSnap);
+        currentSnapshots.push({pair,snap:currentSnap,cat:currentCat,pairPatterns,upMoves,downMoves});
+      }
+
+      pairResults.push({pair,upMoves,downMoves,pairPatterns});
+    }catch(e){console.error(pair,e)}
+    await sleep(8000);
+  }
+
+  document.getElementById('progressFill').style.width='100%';
+  document.getElementById('progressLabel').textContent='Analyse terminée — calcul des patterns...';
+
+  // Calculer les patterns dominants
+  const dominantPatterns=calcDominantPatterns(allPatterns);
+  renderResults(dominantPatterns,currentSnapshots,pairResults,pipThreshold,allPatterns);
+  document.getElementById('runBtn').disabled=false;
+}
+
+// ─── CALCUL DES PATTERNS DOMINANTS ───────────────────────────────────────────
+function calcDominantPatterns(allPatterns){
+  const fields=['rsiZone','macdSignal','macdMomentum','bbZone','stochZone','adxStrength','adxDir','emaTrend'];
+  const result={UP:{},DOWN:{}};
+
+  ['UP','DOWN'].forEach(dir=>{
+    const patterns=allPatterns[dir];
+    if(!patterns.length)return;
+    fields.forEach(field=>{
+      const counts={};
+      patterns.forEach(p=>{const v=p[field];counts[v]=(counts[v]||0)+1});
+      const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+      result[dir][field]={dominant:sorted[0]?.[0],pct:sorted[0]?Math.round(sorted[0][1]/patterns.length*100):0,counts};
+    });
+  });
+  return result;
+}
+
+// ─── SCORE DE RESSEMBLANCE AU PATTERN ────────────────────────────────────────
+function calcMatchScore(currentCat,dominantPattern,dir){
+  const fields=['rsiZone','macdSignal','macdMomentum','bbZone','stochZone','adxStrength','adxDir','emaTrend'];
+  let score=0,total=0;
+  fields.forEach(field=>{
+    const dom=dominantPattern[field];
+    if(!dom||dom.pct<40)return; // ignore si pas assez dominant
+    total+=dom.pct;
+    if(currentCat[field]===dom.dominant)score+=dom.pct;
+  });
+  return total>0?Math.round(score/total*100):0;
+}
+
+// ─── RENDU ────────────────────────────────────────────────────────────────────
+function renderResults(dominant,currentSnapshots,pairResults,pipThreshold,allPatterns){
+  const box=document.getElementById('resultsBox');
+  box.style.display='block';
+
+  const totalUp=allPatterns.UP.length;
+  const totalDown=allPatterns.DOWN.length;
+  const totalMoves=totalUp+totalDown;
+
+  // Signaux actuels avec score de ressemblance
+  const signals=currentSnapshots.map(cs=>{
+    const upScore=calcMatchScore(cs.cat,dominant.UP,cs.pairPatterns);
+    const downScore=calcMatchScore(cs.cat,dominant.DOWN,cs.pairPatterns);
+    return{...cs,upScore,downScore,bestDir:upScore>=downScore?'UP':'DOWN',bestScore:Math.max(upScore,downScore)}
+  }).filter(s=>s.bestScore>=40).sort((a,b)=>b.bestScore-a.bestScore);
+
+  const fields=['rsiZone','macdSignal','macdMomentum','bbZone','stochZone','adxStrength','adxDir','emaTrend'];
+  const fieldLabels={'rsiZone':'RSI','macdSignal':'MACD Signal','macdMomentum':'MACD Momentum','bbZone':'Bollinger','stochZone':'Stochastique','adxStrength':'ADX Force','adxDir':'ADX Direction','emaTrend':'EMA Tendance'};
+
+  box.innerHTML=`
+    <div class="section-title">📊 RÉSUMÉ DE L'ANALYSE</div>
+    <div class="stats-grid">
+      <div class="stat-card neutral"><div class="stat-val">${totalMoves}</div><div class="stat-label">MOUVEMENTS DÉTECTÉS</div></div>
+      <div class="stat-card up"><div class="stat-val">${totalUp}</div><div class="stat-label">HAUSSES ≥ ${pipThreshold} PIPS</div></div>
+      <div class="stat-card down"><div class="stat-val">${totalDown}</div><div class="stat-label">BAISSES ≥ ${pipThreshold} PIPS</div></div>
+      <div class="stat-card neutral"><div class="stat-val">${signals.length}</div><div class="stat-label">SIGNAUX ACTUELS</div></div>
+    </div>
+
+    ${signals.length>0?`
+    <div class="alert-box">
+      <div class="alert-title">🚨 SIGNAUX ACTUELS — RESSEMBLANCE AU PATTERN HISTORIQUE</div>
+      ${signals.map(s=>`
+        <div class="alert-item">
+          ${FLAGS[s.pair]||''} <strong>${s.pair}</strong>
+          <span style="color:${s.bestDir==='UP'?'var(--buy)':'var(--sell)'}">${s.bestDir==='UP'?'▲ HAUSSE probable':'▼ BAISSE probable'}</span>
+          <span class="match-score">${s.bestScore}% de ressemblance</span>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">
+            RSI: ${s.snap.rsi} | Stoch: ${s.snap.stoch.k} | ADX: ${s.snap.adx.adx} | BB: ${s.snap.bbPos}%
+          </div>
+        </div>`).join('')}
+    </div>`:''}
+
+    <div class="section-title">📈 PATTERN DOMINANT AVANT UNE HAUSSE (${totalUp} occurrences)</div>
+    <div class="pattern-grid">
+      ${fields.map(field=>{
+        const dom=dominant.UP[field];if(!dom)return'';
+        const isStrong=dom.pct>=60;
+        return`<div class="ind-item" style="background:var(--bg2);border:1px solid ${isStrong?'rgba(0,255,136,.3)':'var(--border)'};border-radius:8px;padding:12px">
+          <div class="ind-name">${fieldLabels[field]}</div>
+          <div class="ind-val ${dom.pct>=60?'bullish':'neutral'}">${dom.dominant}</div>
+          <div style="margin-top:8px">
+            <div class="freq-track"><div class="freq-fill up" style="width:${dom.pct}%"></div></div>
+            <div class="freq-pct" style="color:${dom.pct>=60?'var(--buy)':'var(--muted)'}">${dom.pct}% des cas</div>
+          </div>
+          ${isStrong?'<div style="font-size:9px;color:var(--buy);margin-top:4px;font-family:Space Mono,monospace">✓ SIGNAL FORT</div>':''}
+        </div>`}).join('')}
+    </div>
+
+    <div class="section-title">📉 PATTERN DOMINANT AVANT UNE BAISSE (${totalDown} occurrences)</div>
+    <div class="pattern-grid">
+      ${fields.map(field=>{
+        const dom=dominant.DOWN[field];if(!dom)return'';
+        const isStrong=dom.pct>=60;
+        return`<div class="ind-item" style="background:var(--bg2);border:1px solid ${isStrong?'rgba(255,68,102,.3)':'var(--border)'};border-radius:8px;padding:12px">
+          <div class="ind-name">${fieldLabels[field]}</div>
+          <div class="ind-val ${dom.pct>=60?'bearish':'neutral'}">${dom.dominant}</div>
+          <div style="margin-top:8px">
+            <div class="freq-track"><div class="freq-fill down" style="width:${dom.pct}%"></div></div>
+            <div class="freq-pct" style="color:${dom.pct>=60?'var(--sell)':'var(--muted)'}">${dom.pct}% des cas</div>
+          </div>
+          ${isStrong?'<div style="font-size:9px;color:var(--sell);margin-top:4px;font-family:Space Mono,monospace">✓ SIGNAL FORT</div>':''}
+        </div>`}).join('')}
+    </div>
+
+    <div class="section-title">💱 DÉTAIL PAR PAIRE</div>
+    <div class="table-box">
+      <div class="tbl-h"><span>PAIRE</span><span>HAUSSES</span><span>BAISSES</span><span>RSI moy UP</span><span>RSI moy DOWN</span><span>ADX moy</span><span>EMA UP</span><span>EMA DOWN</span></div>
+      ${pairResults.filter(p=>p.upMoves+p.downMoves>0).map(p=>`
+        <div class="tbl-r">
+          <span>${FLAGS[p.pair]||''} ${p.pair}</span>
+          <span style="color:var(--buy)">${p.upMoves}</span>
+          <span style="color:var(--sell)">${p.downMoves}</span>
+          <span style="color:var(--buy)">${p.pairPatterns.UP.length?Math.round(p.pairPatterns.UP.reduce((s,x)=>s+x.snap.rsi,0)/p.pairPatterns.UP.length):'—'}</span>
+          <span style="color:var(--sell)">${p.pairPatterns.DOWN.length?Math.round(p.pairPatterns.DOWN.reduce((s,x)=>s+x.snap.rsi,0)/p.pairPatterns.DOWN.length):'—'}</span>
+          <span style="color:var(--accent)">${p.pairPatterns.UP.length?Math.round(p.pairPatterns.UP.reduce((s,x)=>s+x.snap.adx.adx,0)/p.pairPatterns.UP.length):'—'}</span>
+          <span style="color:var(--buy);font-size:10px">${p.pairPatterns.UP.length?p.pairPatterns.UP.filter(x=>x.snap.emaTrend==='UP').length+'/'+p.pairPatterns.UP.length:'—'}</span>
+          <span style="color:var(--sell);font-size:10px">${p.pairPatterns.DOWN.length?p.pairPatterns.DOWN.filter(x=>x.snap.emaTrend==='DOWN').length+'/'+p.pairPatterns.DOWN.length:'—'}</span>
+        </div>`).join('')}
+    </div>
+
+    <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;line-height:1.8">
+      <span style="color:var(--purple)">💡 COMMENT UTILISER CES RÉSULTATS</span><br><br>
+      Les patterns marqués <span style="color:var(--buy)">✓ SIGNAL FORT</span> (≥ 60%) sont les indicateurs les plus prédictifs pour ta stratégie.<br>
+      Les signaux actuels avec ≥ 60% de ressemblance sont les plus fiables.<br>
+      En dessous de 40% de ressemblance : ignorer le signal.<br><br>
+      <span style="color:var(--gold)">⚠️ Ces patterns sont calculés sur 83 jours. Plus tu relances l'analyse, plus les patterns s'affinent.</span>
+    </div>
+  `;
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+window.onload=()=>{const k=localStorage.getItem('forex_api_key');if(k)document.getElementById('apiKey').value=k}
+</script>
+</body>
+</html>
