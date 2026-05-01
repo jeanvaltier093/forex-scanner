@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forex Signal Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080c14;--bg2:#0d1320;--bg3:#111827;--border:#1e2d45;
+  --accent:#00d4ff;--buy:#00ff88;--sell:#ff4466;--text:#e8edf5;--muted:#5a7090;--gold:#ffd700;
+  --ramce:#ff8c00;--ramce-buy:#00ff88;--ramce-sell:#ff4466;--ramce-bg:#130d08;--ramce-bg2:#1a1108;--ramce-border:#3d2a10;
+  --ult:#a78bfa;--ult-bg:rgba(167,139,250,.08);--ult-border:rgba(167,139,250,.25);
+}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ─── NOTIF ─── */
+#notif{position:fixed;top:20px;right:20px;z-index:9999;padding:14px 20px;border-radius:8px;font-family:'Space Mono',monospace;font-size:13px;max-width:380px;display:none;backdrop-filter:blur(10px);border:1px solid;animation:slideIn .3s ease}
+#notif.success{background:rgba(0,255,136,.15);border-color:var(--buy);color:var(--buy)}
+#notif.error{background:rgba(255,68,102,.15);border-color:var(--sell);color:var(--sell)}
+#notif.info{background:rgba(0,212,255,.15);border-color:var(--accent);color:var(--accent)}
+@keyframes slideIn{from{transform:translateX(100px);opacity:0}to{transform:none;opacity:1}}
+
+.app{max-width:1400px;margin:0 auto;padding:0 16px}
+
+/* ─── HEADER ─── */
+.header{display:flex;justify-content:space-between;align-items:center;padding:20px 0;border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{font-size:28px;color:var(--accent);filter:drop-shadow(0 0 10px var(--accent))}
+.logo-text{font-size:24px;font-weight:800;letter-spacing:4px}
+.accent{color:var(--accent)}
+.header-left{display:flex;align-items:center;gap:24px}
+.header-right{display:flex;align-items:center;gap:12px}
+.status-bar{display:flex;align-items:center;gap:8px}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--buy);animation:pulse 2s infinite}
+.pulse-dot.loading{background:var(--gold);animation:blink .5s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.4)}50%{box-shadow:0 0 0 8px rgba(0,255,136,0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.status-text{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px}
+.countdown-box{text-align:center}
+.countdown-label{font-size:9px;color:var(--muted);letter-spacing:2px}
+.countdown-value{font-family:'Space Mono',monospace;font-size:20px;color:var(--accent)}
+.refresh-btn{background:transparent;border:1px solid var(--accent);color:var(--accent);padding:10px 20px;cursor:pointer;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;border-radius:4px;transition:all .2s}
+.refresh-btn:hover{background:var(--accent);color:var(--bg)}
+.refresh-btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-ramce{border-color:var(--ramce);color:var(--ramce)}
+.btn-ramce:hover{background:var(--ramce);color:var(--bg)}
+
+/* ─── MOTEUR SELECTOR ─── */
+.engine-tabs{display:flex;gap:0;margin:16px 0;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.engine-tab{flex:1;padding:14px 24px;background:var(--bg2);border:none;cursor:pointer;font-family:'Syne',sans-serif;font-size:14px;font-weight:600;letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px}
+.engine-tab.prod-tab{color:var(--muted);border-right:1px solid var(--border)}
+.engine-tab.prod-tab.active{background:rgba(0,212,255,.1);color:var(--accent);border-bottom:3px solid var(--accent)}
+.engine-tab.ramce-tab{color:var(--muted)}
+.engine-tab.ramce-tab.active{background:rgba(255,140,0,.1);color:var(--ramce);border-bottom:3px solid var(--ramce)}
+.engine-badge{font-family:'Space Mono',monospace;font-size:10px;padding:2px 8px;border-radius:3px}
+.prod-badge{background:rgba(0,212,255,.15);color:var(--accent);border:1px solid rgba(0,212,255,.3)}
+.ramce-badge{background:rgba(255,140,0,.15);color:var(--ramce);border:1px solid rgba(255,140,0,.3)}
+
+/* ─── STATS BAR ─── */
+.stats-bar{display:flex;border:1px solid var(--border);border-radius:8px;margin:0 0 16px;overflow:hidden}
+.stat{flex:1;padding:14px 16px;text-align:center;border-right:1px solid var(--border);background:var(--bg2)}
+.stat:last-child{border-right:none}
+.stat-val{font-family:'Space Mono',monospace;font-size:22px;font-weight:700}
+.stat-label{font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:4px}
+.stat.good .stat-val{color:var(--buy)}.stat.bad .stat-val{color:var(--sell)}
+
+/* RAMCE stats */
+.stats-bar.ramce-stats{border-color:var(--ramce-border)}
+.stats-bar.ramce-stats .stat{background:var(--ramce-bg2);border-right-color:var(--ramce-border)}
+.stats-bar.ramce-stats .stat-val{color:var(--ramce)}
+
+/* ─── TABS INTERNES ─── */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:24px}
+.tab{background:none;border:none;color:var(--muted);padding:14px 24px;cursor:pointer;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;border-bottom:2px solid transparent;transition:all .2s}
+.tab:hover{color:var(--text)}.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tabs.ramce-tabs .tab.active{color:var(--ramce);border-bottom-color:var(--ramce)}
+.tabs.ramce-tabs{border-bottom-color:var(--ramce-border)}
+
+/* ─── LOADING ─── */
+.loading-bar{height:2px;background:var(--border);border-radius:2px;margin-bottom:16px;overflow:hidden;display:none}
+.loading-fill{height:100%;background:var(--accent);animation:load 1.5s ease infinite}
+.loading-fill.ramce-fill{background:var(--ramce)}
+@keyframes load{0%{width:0%;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0%;margin-left:100%}}
+
+.empty-state{text-align:center;padding:80px 20px;color:var(--muted)}
+.empty-icon{font-size:48px;margin-bottom:16px;opacity:.3}
+.empty-sub{font-size:13px;margin-top:8px;opacity:.6}
+
+/* ─── SIGNAL CARDS PROD ─── */
+.signals-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.signal-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.signal-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.signal-card.buy::before{background:linear-gradient(90deg,var(--buy),transparent)}
+.signal-card.sell::before{background:linear-gradient(90deg,var(--sell),transparent)}
+.signal-card:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.3)}
+
+/* ─── SIGNAL CARDS RAMCE ─── */
+.signal-card.ramce{background:var(--ramce-bg2);border-color:var(--ramce-border)}
+.signal-card.ramce.buy::before{background:linear-gradient(90deg,var(--buy),transparent)}
+.signal-card.ramce.sell::before{background:linear-gradient(90deg,var(--sell),transparent)}
+.confluence-badge{font-family:'Space Mono',monospace;font-size:11px;padding:3px 10px;background:rgba(255,140,0,.15);border:1px solid rgba(255,140,0,.3);color:var(--ramce);border-radius:3px}
+.regime-badge{font-family:'Space Mono',monospace;font-size:10px;padding:2px 8px;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--muted);border-radius:3px;letter-spacing:1px}
+
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.pair-info{display:flex;align-items:center;gap:8px}
+.flag{font-size:18px}.pair-name{font-size:18px;font-weight:800;letter-spacing:2px}
+.dir-badge{padding:5px 12px;border-radius:4px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:1px}
+.dir-badge.buy{background:rgba(0,255,136,.15);color:var(--buy);border:1px solid var(--buy)}
+.dir-badge.sell{background:rgba(255,68,102,.15);color:var(--sell);border:1px solid var(--sell)}
+.reliability-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.rel-label{font-size:9px;color:var(--muted);letter-spacing:2px;white-space:nowrap}
+.rel-track{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.rel-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--buy));border-radius:2px}
+.rel-fill.ramce-rel{background:linear-gradient(90deg,var(--ramce),var(--buy))}
+.rel-val{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:var(--accent);white-space:nowrap}
+.rel-val.ramce-rv{color:var(--ramce)}
+.price-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.price-item{background:var(--bg3);border-radius:6px;padding:10px;text-align:center}
+.price-label{font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:4px}
+.price-val{font-family:'Space Mono',monospace;font-size:13px;font-weight:700}
+.price-item.tp .price-val{color:var(--buy)}.price-item.sl .price-val{color:var(--sell)}
+.indicators-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ind{font-family:'Space Mono',monospace;font-size:10px;padding:3px 8px;background:var(--bg3);border-radius:3px;color:var(--muted);border:1px solid var(--border)}
+.reasons{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.reason-tag{font-size:10px;padding:3px 8px;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:3px;color:var(--accent)}
+.reason-tag.ramce-tag{background:rgba(255,140,0,.08);border-color:rgba(255,140,0,.2);color:var(--ramce)}
+.trade-btn{width:100%;padding:12px;background:transparent;border:1px solid var(--accent);color:var(--accent);cursor:pointer;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;border-radius:6px;transition:all .2s}
+.trade-btn:hover{background:var(--accent);color:var(--bg)}
+.trade-btn.ramce-btn{border-color:var(--ramce);color:var(--ramce)}
+.trade-btn.ramce-btn:hover{background:var(--ramce);color:var(--bg)}
+
+/* ─── TRADES LIST ─── */
+.trades-list{display:flex;flex-direction:column;gap:12px}
+.trade-row{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:10px;border-left:3px solid}
+.trade-row.buy{border-left-color:var(--buy)}.trade-row.sell{border-left-color:var(--sell)}
+.trade-row.ramce-row{background:var(--ramce-bg2);border-color:var(--ramce-border)}
+.trade-main{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.trade-pair{font-size:16px;font-weight:800;letter-spacing:2px}
+.trade-levels{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.tp-lv{font-family:'Space Mono',monospace;font-size:12px;color:var(--buy)}
+.sl-lv{font-family:'Space Mono',monospace;font-size:12px;color:var(--sell)}
+.rel-badge{font-size:11px;color:var(--accent);background:rgba(0,212,255,.1);padding:2px 8px;border-radius:3px}
+.rel-badge.ramce-rb{color:var(--ramce);background:rgba(255,140,0,.1)}
+.trade-meta{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.trade-time{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted)}
+.pause-badge{font-size:11px;color:var(--gold);background:rgba(255,215,0,.1);padding:2px 8px;border-radius:3px}
+
+/* ─── HISTORY ─── */
+.hist-summary{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:20px}
+.sum-stat{flex:1;padding:16px;text-align:center;background:var(--bg2);border-right:1px solid var(--border)}
+.sum-stat:last-child{border-right:none}
+.sum-stat.good .sum-val{color:var(--buy)}.sum-stat.bad .sum-val{color:var(--sell)}
+.sum-val{font-family:'Space Mono',monospace;font-size:24px;font-weight:700}
+.sum-label{font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:4px}
+.hist-summary.ramce-hs{border-color:var(--ramce-border)}
+.hist-summary.ramce-hs .sum-stat{background:var(--ramce-bg2);border-right-color:var(--ramce-border)}
+.hist-table{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.hist-table.ramce-ht{background:var(--ramce-bg2);border-color:var(--ramce-border)}
+.tbl-header{display:grid;grid-template-columns:1.5fr .7fr 1fr 1fr .7fr 1fr 1.2fr;padding:12px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:9px;color:var(--muted);letter-spacing:2px;font-family:'Space Mono',monospace}
+.hist-row{display:grid;grid-template-columns:1.5fr .7fr 1fr 1fr .7fr 1fr 1.2fr;padding:12px 16px;border-bottom:1px solid var(--border);font-size:12px;font-family:'Space Mono',monospace;align-items:center;transition:background .2s}
+.hist-row:hover{background:var(--bg3)}.hist-row.win{border-left:2px solid var(--buy)}.hist-row.loss{border-left:2px solid var(--sell)}.hist-row:last-child{border-bottom:none}
+.buy-txt{color:var(--buy)}.sell-txt{color:var(--sell)}
+.res-badge{padding:3px 8px;border-radius:3px;font-size:11px}
+.res-badge.win{background:rgba(0,255,136,.15);color:var(--buy)}.res-badge.loss{background:rgba(255,68,102,.15);color:var(--sell)}
+.date-sm{font-size:10px;color:var(--muted)}
+.clear-btn{margin-top:16px;background:transparent;border:1px solid var(--sell);color:var(--sell);padding:10px 20px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1px;border-radius:4px;transition:all .2s}
+.clear-btn:hover{background:var(--sell);color:white}
+.update-info{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:16px;letter-spacing:1px}
+.section{padding-bottom:40px}
+
+/* ─── MODALS ─── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:32px;max-width:500px;width:100%}
+.modal h2{font-size:20px;font-weight:800;margin-bottom:8px;color:var(--accent)}
+.modal h2.ramce-title{color:var(--ramce)}
+.modal p{color:var(--muted);font-size:14px;margin-bottom:20px;line-height:1.6}
+.modal input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:6px;font-family:'Space Mono',monospace;font-size:13px;margin-bottom:12px;outline:none}
+.modal input:focus{border-color:var(--accent)}
+.modal-btn{width:100%;padding:14px;background:var(--accent);color:var(--bg);border:none;border-radius:6px;cursor:pointer;font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:2px}
+.modal-btn.ramce-mbtn{background:var(--ramce)}
+.modal a{color:var(--accent);text-decoration:none}.modal a:hover{text-decoration:underline}
+
+/* ─── RAMCE INFO BOX ─── */
+.ramce-info{background:var(--ramce-bg2);border:1px solid var(--ramce-border);border-radius:8px;padding:16px;margin-bottom:20px;display:flex;gap:16px;align-items:flex-start}
+.ramce-info-icon{font-size:24px;flex-shrink:0}
+.ramce-info-text{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);line-height:1.8}
+.ramce-info-text strong{color:var(--ramce)}
+.ramce-server-status{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:6px;vertical-align:middle}
+.ramce-server-status.ok{background:var(--buy)}
+.ramce-server-status.err{background:var(--sell)}
+
+/* ─── ULTIMATE ENGINE ─── */
+.stats-bar.ult-stats{border-color:var(--ult-border)}
+.stats-bar.ult-stats .stat{background:var(--ult-bg);border-right-color:var(--ult-border);color:var(--ult)}
+.stats-bar.ult-stats .stat-val{color:var(--ult)}
+.engine-tab.ult-tab{color:var(--muted)}
+.engine-tab.ult-tab.active{background:var(--ult-bg);color:var(--ult);border-bottom:3px solid var(--ult)}
+.ult-badge{background:var(--ult-bg);color:var(--ult);border:1px solid var(--ult-border)}
+.tabs.ult-tabs .tab.active{color:var(--ult);border-bottom-color:var(--ult)}
+.tabs.ult-tabs{border-bottom-color:var(--ult-border)}
+.loading-fill.ult-fill{background:var(--ult)}
+.signal-card.ult{background:var(--ult-bg);border-color:var(--ult-border)}
+.sig-breakdown{margin-bottom:10px;display:flex;flex-direction:column;gap:2px}
+.sig-row{display:flex;align-items:center;gap:5px;font-family:'Space Mono',monospace;font-size:9px;padding:2px 0}
+.sig-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.sig-dot.on{background:var(--buy)}.sig-dot.off{background:var(--border)}
+.sig-lbl{color:var(--muted)}.sig-lbl.on{color:var(--text)}
+.sig-count-ult{font-family:'Space Mono',monospace;font-size:10px;color:var(--ult);margin-bottom:5px}
+.trade-btn.ult-btn{border-color:var(--ult);color:var(--ult)}
+.trade-btn.ult-btn:hover{background:var(--ult);color:var(--bg)}
+.ult-info{background:var(--ult-bg);border:1px solid var(--ult-border);border-radius:8px;padding:14px 16px;margin-bottom:18px;display:flex;gap:14px;align-items:flex-start}
+.ult-info-text{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);line-height:1.9}
+.ult-info-text strong{color:var(--ult)}
+.ult-rel{color:var(--ult)}
+.ult-close-btn{font-family:'Space Mono',monospace;font-size:9px;background:transparent;border:1px solid var(--muted);color:var(--muted);padding:3px 10px;border-radius:3px;cursor:pointer;transition:all .2s;margin-top:4px}
+.ult-close-btn:hover{border-color:var(--sell);color:var(--sell)}
+
+/* ─── MODAL CLOSE TRADE ─── */
+.close-trade-modal{display:none;align-items:center;justify-content:center}
+.close-trade-modal.show{display:flex}
+.res-choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.res-btn{padding:13px;border-radius:6px;border:1px solid;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:1px;transition:all .2s;min-height:44px}
+.res-btn.win-btn{border-color:var(--buy);color:var(--buy);background:transparent}
+.res-btn.win-btn:hover{background:var(--buy);color:var(--bg)}
+.res-btn.loss-btn{border-color:var(--sell);color:var(--sell);background:transparent}
+.res-btn.loss-btn:hover{background:var(--sell);color:var(--bg)}
+.modal-cancel-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-family:'Space Mono',monospace;font-size:10px;margin-top:8px;width:100%;text-align:center;min-height:36px}
+
+/* ─── MOBILE BOTTOM NAV ─── */
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:2000;background:var(--bg2);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)}
+.mobile-nav-inner{display:flex}
+.mobile-nav-btn{flex:1;padding:9px 4px;background:none;border:none;color:var(--muted);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color .2s;min-height:48px}
+.mobile-nav-btn.active-prod{color:var(--accent)}
+.mobile-nav-btn.active-ult{color:var(--ult)}
+.mobile-nav-btn.active-ramce{color:var(--ramce)}
+.mobile-nav-icon{font-size:16px;line-height:1}
+
+@media(max-width:768px){
+  .stats-bar{flex-wrap:wrap;overflow-x:auto}
+  .stat{min-width:50%;border-right:none;border-bottom:1px solid var(--border)}
+  .tbl-header,.hist-row{grid-template-columns:1fr .5fr .8fr .8fr .6fr .8fr;font-size:10px}
+  .tbl-header span:last-child,.hist-row span:last-child{display:none}
+  .countdown-box{display:none}
+  .engine-tab{padding:10px 10px;font-size:11px;letter-spacing:.5px}
+  .engine-badge{display:none}
+  .tab{padding:10px 14px;font-size:11px}
+  .mobile-nav{display:block}
+  .app{padding-bottom:calc(54px + env(safe-area-inset-bottom))}
+  .header-right .refresh-btn:not(#refreshBtn){display:none}
+  .signal-card{padding:15px}
+  .pair-name{font-size:16px}
+  .trade-btn{font-size:11px;min-height:44px}
+  .signals-grid{grid-template-columns:1fr}
+  .modal{padding:20px;margin:10px}
+}
+</style>
+</head>
+<body>
+
+<!-- MODAL API KEY -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal">
+    <h2>◈ FOREX SIGNAL PRO</h2>
+    <p>Pour démarrer, vous avez besoin d'une clé API <strong>Twelve Data</strong> gratuite.<br><br>
+    1. Allez sur <a href="https://twelvedata.com/register" target="_blank">twelvedata.com/register</a><br>
+    2. Créez un compte gratuit<br>
+    3. Copiez votre clé API et collez-la ici</p>
+    <input type="text" id="apiKeyInput" placeholder="Collez votre clé API ici..."/>
+    <button class="modal-btn" onclick="saveApiKey()">DÉMARRER L'APPLICATION →</button>
+  </div>
+</div>
+
+<!-- MODAL JSONBIN PROD -->
+<div class="modal-overlay" id="jbinModal" style="display:none">
+  <div class="modal">
+    <h2>☁️ SYNC CLOUD — PROD</h2>
+    <p>Pour synchroniser votre historique sur tous vos appareils :<br><br>
+    1. Allez sur <a href="https://jsonbin.io" target="_blank">jsonbin.io</a><br>
+    2. Créez un compte gratuit<br>
+    3. Allez dans <strong>API Keys</strong> → copiez votre <strong>Master Key</strong><br>
+    4. Collez-la ici</p>
+    <input type="text" id="jbinKeyInput" placeholder="$2b$10$... (votre Master Key)"/>
+    <button class="modal-btn" onclick="saveJbinKey()">ACTIVER LA SYNC →</button>
+    <div style="text-align:center;margin-top:12px"><button onclick="document.getElementById('jbinModal').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-family:Space Mono,monospace;font-size:11px">Annuler</button></div>
+  </div>
+</div>
+
+<!-- MODAL RAMCE SERVER -->
+<div class="modal-overlay" id="ramceModal" style="display:none">
+  <div class="modal">
+    <h2 class="ramce-title">🔬 RAMCE v4 — SERVEUR</h2>
+    <p>Entrez l'URL de votre serveur RAMCE déployé sur Render.<br><br>
+    Exemple : <strong>https://forex-ramce.onrender.com</strong><br><br>
+    Le serveur expose un endpoint <strong>/status</strong> avec les trades et l'historique RAMCE.</p>
+    <input type="text" id="ramceUrlInput" placeholder="https://forex-ramce.onrender.com"/>
+    <button class="modal-btn ramce-mbtn" onclick="saveRamceUrl()">CONNECTER RAMCE →</button>
+    <div style="text-align:center;margin-top:12px"><button onclick="document.getElementById('ramceModal').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-family:Space Mono,monospace;font-size:11px">Annuler</button></div>
+  </div>
+</div>
+
+<div id="notif"></div>
+
+<!-- MODAL CLOSE TRADE ULTIMATE -->
+<div class="modal-overlay close-trade-modal" id="ultCloseModal">
+  <div class="modal">
+    <h2 id="ultCloseTitle" style="color:var(--ult)">Clôturer le trade</h2>
+    <p id="ultCloseDesc" style="color:var(--muted);font-size:13px;margin-bottom:16px">Sélectionnez le résultat :</p>
+    <input type="number" id="ultClosePriceInput" placeholder="Prix de clôture (optionnel)" step="0.00001" style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:6px;font-family:Space Mono,monospace;font-size:12px;margin-bottom:10px;outline:none;min-height:44px">
+    <div class="res-choice">
+      <button class="res-btn win-btn" onclick="confirmUltClose('WIN')">✅ GAIN (TP)</button>
+      <button class="res-btn loss-btn" onclick="confirmUltClose('LOSS')">❌ PERTE (SL)</button>
+    </div>
+    <button class="modal-cancel-btn" onclick="document.getElementById('ultCloseModal').style.display='none'">Annuler</button>
+  </div>
+</div>
+
+<!-- MODAL URL SERVEUR ULTIMATE -->
+<div class="modal-overlay" id="ultModal" style="display:none">
+  <div class="modal">
+    <h2 style="color:var(--ult)">⬡ Configurer serveur ULTIMATE</h2>
+    <p>Entrez l'URL de votre serveur ULTIMATE déployé sur Render.<br><br>
+    Format : <span style="font-family:Space Mono,monospace;font-size:11px;color:var(--ult)">https://forex-ultimate-xxxx.onrender.com</span><br><br>
+    Le serveur exécute les signaux <strong>BUY 67% · SELL 72%</strong> en continu 24h/24.</p>
+    <input type="text" id="ultUrlInput" placeholder="https://forex-ultimate-xxxx.onrender.com">
+    <button class="modal-btn" style="background:var(--ult)" onclick="saveUltUrl()">CONNECTER →</button>
+    <div style="text-align:center;margin-top:10px"><button onclick="document.getElementById('ultModal').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-family:Space Mono,monospace;font-size:11px">Annuler</button></div>
+  </div>
+</div>
+
+<div class="app">
+  <header class="header">
+    <div class="header-left">
+      <div class="logo"><span class="logo-icon">◈</span><span class="logo-text">FOREX<span class="accent">PRO</span></span></div>
+      <div class="status-bar"><div class="pulse-dot" id="statusDot"></div><span class="status-text" id="statusText">LIVE</span></div>
+    </div>
+    <div class="header-right">
+      <div class="countdown-box"><div class="countdown-label">PROCHAIN SCAN</div><div class="countdown-value" id="countdown">10:00</div></div>
+      <button class="refresh-btn" id="refreshBtn" onclick="runScan()">↺ SCAN</button>
+      <button class="refresh-btn" style="border-color:var(--gold);color:var(--gold)" onclick="document.getElementById('jbinModal').style.display='flex'" title="Sync cloud PROD">☁️</button>
+      <button class="refresh-btn" style="border-color:var(--ult);color:var(--ult)" onclick="document.getElementById('ultModal').style.display='flex'" title="Configurer serveur ULTIMATE">⬡</button>
+      <button class="refresh-btn btn-ramce" onclick="document.getElementById('ramceModal').style.display='flex'" title="Configurer serveur RAMCE">🔬</button>
+    </div>
+  </header>
+
+  <!-- SÉLECTEUR MOTEUR -->
+  <div class="engine-tabs">
+    <button class="engine-tab prod-tab active" id="tab-prod-btn" onclick="switchEngine('prod')">
+      <span>📡 PROD</span>
+      <span class="engine-badge prod-badge">BUY 69% · SELL 66%</span>
+    </button>
+    <button class="engine-tab ult-tab" id="tab-ult-btn" onclick="switchEngine('ult')">
+      <span>⬡ ULTIMATE</span>
+      <span class="engine-badge ult-badge">BUY 67% · SELL 72%</span>
+    </button>
+    <button class="engine-tab ramce-tab" id="tab-ramce-btn" onclick="switchEngine('ramce')">
+      <span>🔬 RAMCE v4</span>
+      <span class="engine-badge ramce-badge">BUY 61% · SELL 75%</span>
+    </button>
+  </div>
+
+  <!-- ══════════ SECTION PROD ══════════ -->
+  <div id="section-prod">
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-val" id="sActive">0</div><div class="stat-label">TRADES ACTIFS</div></div>
+      <div class="stat"><div class="stat-val" id="sSignals">0</div><div class="stat-label">SIGNAUX DÉTECTÉS</div></div>
+      <div class="stat" id="sWinRateStat"><div class="stat-val" id="sWinRate">0%</div><div class="stat-label">WIN RATE</div></div>
+      <div class="stat" id="sPipsStat"><div class="stat-val" id="sPips">0.0</div><div class="stat-label">TOTAL PIPS</div></div>
+      <div class="stat"><div class="stat-val" id="sHistory">0</div><div class="stat-label">CLÔTURÉS</div></div>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" onclick="showProdTab('dashboard',this)">📡 SIGNAUX</button>
+      <button class="tab" onclick="showProdTab('actifs',this)">⚡ ACTIFS (<span id="tabActive">0</span>)</button>
+      <button class="tab" onclick="showProdTab('historique',this)">📋 HISTORIQUE (<span id="tabHist">0</span>)</button>
+    </nav>
+    <main>
+      <div id="prod-dashboard" class="section">
+        <div id="updateInfo" class="update-info" style="display:none"></div>
+        <div class="loading-bar" id="loadingBar"><div class="loading-fill"></div></div>
+        <div id="signalsContainer"><div class="empty-state"><div class="empty-icon">◎</div><div>Cliquez sur SCAN pour analyser le marché</div><div class="empty-sub">L'application analyse automatiquement toutes les 10 minutes</div></div></div>
+      </div>
+      <div id="prod-actifs" class="section" style="display:none">
+        <div id="activesContainer"><div class="empty-state"><div class="empty-icon">⚡</div><div>Aucun trade actif</div></div></div>
+      </div>
+      <div id="prod-historique" class="section" style="display:none">
+        <div id="histContainer"><div class="empty-state"><div class="empty-icon">📋</div><div>Historique vide</div></div></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ══════════ SECTION ULTIMATE ══════════ -->
+  <div id="section-ult" style="display:none">
+    <div class="stats-bar ult-stats">
+      <div class="stat"><div class="stat-val" id="uActive">0</div><div class="stat-label">ACTIFS</div></div>
+      <div class="stat"><div class="stat-val" id="uWinRate">—</div><div class="stat-label">WIN RATE</div></div>
+      <div class="stat"><div class="stat-val" id="uPips">—</div><div class="stat-label">TOTAL PIPS</div></div>
+      <div class="stat"><div class="stat-val" id="uHistory">0</div><div class="stat-label">CLÔTURÉS</div></div>
+      <div class="stat"><div class="stat-val" id="uServerStatus" style="font-size:11px">—</div><div class="stat-label">SERVEUR</div></div>
+    </div>
+    <nav class="tabs ult-tabs">
+      <button class="tab active" onclick="showUltTab('actifs',this)">⚡ ACTIFS (<span id="uTabActive">0</span>)</button>
+      <button class="tab" onclick="showUltTab('historique',this)">📋 HISTORIQUE (<span id="uTabHist">0</span>)</button>
+    </nav>
+    <main>
+      <div id="ult-actifs" class="section">
+        <div class="ult-info">
+          <div style="font-size:20px;flex-shrink:0">⬡</div>
+          <div class="ult-info-text">
+            <strong>ULTIMATE — Analyseur exhaustif 513M combinaisons · Walk-Forward 5 fenêtres</strong><br>
+            <strong style="color:var(--buy)">▲ BUY</strong> : macdDiv + stochRSIMid + adxDir + heikenDir + connorsExt — <strong>WR 67%</strong> · WF-moy 78% · PF 2.97 · 7/8 paires<br>
+            <strong style="color:var(--sell)">▼ SELL</strong> : macdDiv + stochRSIMid + pivotR2 + dblTop + triangleDes — <strong>WR 72%</strong> · WF-moy 72% · PF 2.87 · 8/8 paires<br>
+            Serveur : <span class="ramce-server-status" id="ultServerDot"></span><span id="ultServerTxt" style="color:var(--muted)">NON CONFIGURÉ — <a href="#" onclick="document.getElementById('ultModal').style.display='flex';return false" style="color:var(--ult)">Connecter le serveur Render</a></span>
+            &nbsp;·&nbsp;<a href="#" onclick="triggerUltScan();return false" style="color:var(--ult);font-size:10px">↺ Scan manuel</a>
+          </div>
+        </div>
+        <div id="ultActivesContainer"><div class="empty-state"><div class="empty-icon" style="color:var(--ult)">⬡</div><div>Configurer le serveur ULTIMATE</div><div class="empty-sub">Cliquez sur ⬡ dans le header · Scan auto toutes les 15 min</div></div></div>
+      </div>
+      <div id="ult-historique" class="section" style="display:none">
+        <div id="ultHistContainer"><div class="empty-state"><div class="empty-icon">📋</div><div>Historique ULTIMATE vide</div></div></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ══════════ SECTION RAMCE ══════════ -->
+  <div id="section-ramce" style="display:none">
+    <div class="stats-bar ramce-stats">
+      <div class="stat"><div class="stat-val" id="rActive">0</div><div class="stat-label">TRADES ACTIFS</div></div>
+      <div class="stat"><div class="stat-val" id="rWinRate">—</div><div class="stat-label">WIN RATE LIVE</div></div>
+      <div class="stat"><div class="stat-val" id="rPips">—</div><div class="stat-label">TOTAL PIPS</div></div>
+      <div class="stat"><div class="stat-val" id="rHistory">0</div><div class="stat-label">CLÔTURÉS</div></div>
+      <div class="stat"><div class="stat-val" id="rServerStatus" style="font-size:11px">—</div><div class="stat-label">SERVEUR RAMCE</div></div>
+    </div>
+    <nav class="tabs ramce-tabs">
+      <button class="tab active" onclick="showRamceTab('actifs',this)">⚡ ACTIFS (<span id="rTabActive">0</span>)</button>
+      <button class="tab" onclick="showRamceTab('historique',this)">📋 HISTORIQUE (<span id="rTabHist">0</span>)</button>
+    </nav>
+    <main>
+      <div id="ramce-actifs" class="section">
+        <div class="ramce-info">
+          <div class="ramce-info-icon">🔬</div>
+          <div class="ramce-info-text">
+            <strong>RAMCE v4</strong> — Regime-Aware Monte Carlo Engine<br>
+            <strong>BUY TRENDING</strong> : stoch_bull_cross + bb_lower_touch + shooting_star + higher_high + near_ema200 — <strong>WR 60.9%</strong> | PF 3.09 | p=0.008<br>
+            <strong>SELL RANGING</strong> : rsi_oversold + stoch_overbought + inside_bar_bear + hammer + doji — <strong>WR 75.4%</strong> | PF 3.56 | p=0.002<br>
+            Confluence ≥ 3/5 signaux · SL=1.5×ATR · TP=2.25×ATR · 8 paires
+          </div>
+        </div>
+        <div id="ramceActivesContainer"><div class="empty-state"><div class="empty-icon">🔬</div><div>Configurer le serveur RAMCE via le bouton 🔬</div><div class="empty-sub">Le serveur RAMCE scrute le marché en parallèle du PROD</div></div></div>
+      </div>
+      <div id="ramce-historique" class="section" style="display:none">
+        <div id="ramceHistContainer"><div class="empty-state"><div class="empty-icon">📋</div><div>Historique RAMCE vide</div></div></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-nav" id="mobileNav">
+  <div class="mobile-nav-inner">
+    <button class="mobile-nav-btn active-prod" id="mnav-prod" onclick="switchEngineMobile('prod')">
+      <span class="mobile-nav-icon">📡</span>PROD
+    </button>
+    <button class="mobile-nav-btn" id="mnav-ult" onclick="switchEngineMobile('ult')">
+      <span class="mobile-nav-icon">⬡</span>ULTIMATE
+    </button>
+    <button class="mobile-nav-btn" id="mnav-scan" onclick="runScan()" style="color:var(--accent)">
+      <span class="mobile-nav-icon">↺</span>SCAN
+    </button>
+    <button class="mobile-nav-btn" id="mnav-ramce" onclick="switchEngineMobile('ramce')">
+      <span class="mobile-nav-icon">🔬</span>RAMCE
+    </button>
+  </div>
+</nav>
+
+<script>
+// ─── ÉTAT ────────────────────────────────────────────────────────────────────
+let API_KEY=localStorage.getItem('forex_api_key')||'';
+let activeTrades=JSON.parse(localStorage.getItem('forex_active')||'[]');
+let history=JSON.parse(localStorage.getItem('forex_history')||'[]');
+let lastSignalTime=JSON.parse(localStorage.getItem('forex_last_signal')||'{}');
+let currentSignals=[];
+let countdownVal=600;
+let JBIN_KEY=localStorage.getItem('forex_jbin_key')||'';
+let JBIN_ID=localStorage.getItem('forex_jbin_id')||'69da456a36566621a8a0a91b';
+
+// RAMCE
+let RAMCE_URL=localStorage.getItem('forex_ramce_url')||'';
+let activeTradesRAMCE=[];
+let historyRAMCE=[];
+let currentEngine='prod';
+
+// ULTIMATE
+let ULT_URL=localStorage.getItem('forex_ult_url')||'';
+let ultActiveTrades=[];
+let ultHistory=[];
+
+const PAIRS=['EUR/USD','GBP/USD','USD/JPY','USD/CHF','AUD/USD','NZD/USD','USD/CAD','EUR/GBP'];
+const FLAGS={'EUR/USD':'🇪🇺🇺🇸','GBP/USD':'🇬🇧🇺🇸','USD/JPY':'🇺🇸🇯🇵','USD/CHF':'🇺🇸🇨🇭','AUD/USD':'🇦🇺🇺🇸','NZD/USD':'🇳🇿🇺🇸','USD/CAD':'🇺🇸🇨🇦','EUR/GBP':'🇪🇺🇬🇧','EUR/JPY':'🇪🇺🇯🇵','GBP/JPY':'🇬🇧🇯🇵','EUR/CHF':'🇪🇺🇨🇭','AUD/JPY':'🇦🇺🇯🇵'};
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.onload=async()=>{
+  if(!API_KEY){
+    document.getElementById('apiModal').style.display='flex';
+  } else {
+    document.getElementById('apiModal').style.display='none';
+    init();
+    loadCloud().then(()=>{updateStats();renderActives();renderHistory()}).catch(()=>{});
+  }
+  if(RAMCE_URL){loadRamce().catch(()=>{})}
+  if(ULT_URL){loadUltimate().catch(()=>{})}
+};
+async function saveApiKey(){
+  const k=document.getElementById('apiKeyInput').value.trim();
+  if(!k){showNotif('Veuillez entrer votre clé API','error');return}
+  API_KEY=k;
+  localStorage.setItem('forex_api_key',k);
+  document.getElementById('apiModal').style.display='none';
+  // Démarrage immédiat sans attendre le cloud
+  init();
+  // Chargement cloud en arrière-plan
+  loadCloud().then(()=>{updateStats();renderActives();renderHistory()}).catch(()=>{});
+}
+async function saveJbinKey(){const k=document.getElementById('jbinKeyInput').value.trim();if(!k){showNotif('Veuillez entrer votre clé JSONBin','error');return}JBIN_KEY=k;localStorage.setItem('forex_jbin_key',k);document.getElementById('jbinModal').style.display='none';showNotif('☁️ Chargement...','info');await loadCloud();updateStats();renderActives();renderHistory();showNotif('✅ Sync activée ! '+activeTrades.length+' trade(s)','success')}
+function saveRamceUrl(){const u=document.getElementById('ramceUrlInput').value.trim().replace(/\/$/,'');if(!u){showNotif('Entrez l\'URL du serveur RAMCE','error');return}RAMCE_URL=u;localStorage.setItem('forex_ramce_url',u);document.getElementById('ramceModal').style.display='none';showNotif('🔬 Connexion RAMCE...','info');loadRamce()}
+function saveUltUrl(){const u=document.getElementById('ultUrlInput').value.trim().replace(/\/$/,'');if(!u){showNotif('Entrez l\'URL du serveur ULTIMATE','error');return}ULT_URL=u;localStorage.setItem('forex_ult_url',u);document.getElementById('ultModal').style.display='none';showNotif('⬡ Connexion ULTIMATE...','info');loadUltimate()}
+
+// ─── ENGINE SWITCH ────────────────────────────────────────────────────────────
+function switchEngine(engine){
+  currentEngine=engine;
+  ['prod','ult','ramce'].forEach(e=>{
+    const s=document.getElementById('section-'+e);
+    if(s)s.style.display=e===engine?'block':'none';
+  });
+  document.getElementById('tab-prod-btn').classList.toggle('active',engine==='prod');
+  document.getElementById('tab-ult-btn').classList.toggle('active',engine==='ult');
+  document.getElementById('tab-ramce-btn').classList.toggle('active',engine==='ramce');
+  if(engine==='ramce'&&RAMCE_URL)loadRamce();
+  if(engine==='ult'&&ULT_URL)loadUltimate();
+  if(engine==='ult'&&!ULT_URL)renderUltEmpty();
+}
+function switchEngineMobile(engine){
+  switchEngine(engine);
+  document.querySelectorAll('.mobile-nav-btn').forEach(b=>{
+    b.classList.remove('active-prod','active-ult','active-ramce');
+  });
+  const cls={'prod':'active-prod','ult':'active-ult','ramce':'active-ramce'};
+  const btn=document.getElementById('mnav-'+engine);
+  if(btn)btn.classList.add(cls[engine]||'active-prod');
+}
+function showProdTab(name,btn){
+  ['dashboard','actifs','historique'].forEach(t=>{document.getElementById('prod-'+t).style.display=t===name?'block':'none'});
+  document.querySelectorAll('#section-prod .tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(name==='actifs')renderActives();
+  if(name==='historique')renderHistory();
+}
+function showRamceTab(name,btn){
+  ['actifs','historique'].forEach(t=>{document.getElementById('ramce-'+t).style.display=t===name?'block':'none'});
+  document.querySelectorAll('#section-ramce .tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(name==='historique')renderRamceHistory();
+}
+
+// ─── CLOUD PROD ───────────────────────────────────────────────────────────────
+async function syncCloud(){if(!JBIN_KEY)return;const data={history,activeTrades,lastSignalTime};try{if(!JBIN_ID){const r=await fetch('https://api.jsonbin.io/v3/b',{method:'POST',headers:{'Content-Type':'application/json','X-Master-Key':JBIN_KEY,'X-Bin-Name':'ForexPro','X-Bin-Private':'false'},body:JSON.stringify(data)});const d=await r.json();if(d.metadata){JBIN_ID=d.metadata.id;localStorage.setItem('forex_jbin_id',JBIN_ID)}}else{await fetch('https://api.jsonbin.io/v3/b/'+JBIN_ID,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':JBIN_KEY},body:JSON.stringify(data)})}}catch(e){console.error('Sync error:',e)}}
+async function loadCloud(){
+  if(!JBIN_KEY)return;
+  if(!JBIN_ID){try{const r=await fetch('https://api.jsonbin.io/v3/b?page=1',{headers:{'X-Master-Key':JBIN_KEY}});const d=await r.json();if(d.result&&d.result.length>0){const fb=d.result.find(b=>b.snippetMeta&&b.snippetMeta.name==='ForexPro')||d.result[0];if(fb){JBIN_ID=fb._id;localStorage.setItem('forex_jbin_id',JBIN_ID)}}}catch(e){}}
+  if(!JBIN_ID)return;
+  try{const r=await fetch('https://api.jsonbin.io/v3/b/'+JBIN_ID+'/latest',{headers:{'X-Master-Key':JBIN_KEY}});const d=await r.json();if(d.record){history=d.record.history||[];activeTrades=d.record.activeTrades||[];lastSignalTime=d.record.lastSignalTime||{};localStorage.setItem('forex_history',JSON.stringify(history));localStorage.setItem('forex_active',JSON.stringify(activeTrades));localStorage.setItem('forex_last_signal',JSON.stringify(lastSignalTime));}}catch(e){console.error('Load error:',e)}
+}
+
+// ─── RAMCE SERVER FETCH ───────────────────────────────────────────────────────
+async function loadRamce(){
+  if(!RAMCE_URL){document.getElementById('rServerStatus').textContent='NON CONFIGURÉ';return}
+  try{
+    const r=await fetch(RAMCE_URL+'/status',{signal:AbortSignal.timeout(8000)});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    activeTradesRAMCE=d.activeTrades||[];
+    historyRAMCE=d.history||[];
+    updateRamceStats(d.stats);
+    renderRamceActives();
+    document.getElementById('rServerStatus').innerHTML='<span class="ramce-server-status ok"></span>EN LIGNE';
+    showNotif('🔬 RAMCE connecté — '+activeTradesRAMCE.length+' trade(s) actif(s)','info');
+  }catch(e){
+    document.getElementById('rServerStatus').innerHTML='<span class="ramce-server-status err"></span>HORS LIGNE';
+    console.error('RAMCE fetch:',e.message);
+  }
+}
+function updateRamceStats(stats){
+  if(!stats)return;
+  document.getElementById('rActive').textContent=activeTradesRAMCE.length;
+  document.getElementById('rWinRate').textContent=stats.winRate||'—';
+  document.getElementById('rPips').textContent=stats.totalPips?'+'+stats.totalPips:'—';
+  document.getElementById('rHistory').textContent=historyRAMCE.length;
+  document.getElementById('rTabActive').textContent=activeTradesRAMCE.length;
+  document.getElementById('rTabHist').textContent=historyRAMCE.length;
+}
+
+// ─── RENDER RAMCE ACTIFS ──────────────────────────────────────────────────────
+function renderRamceActives(){
+  const el=document.getElementById('ramceActivesContainer');
+  if(!activeTradesRAMCE.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">🔬</div><div>Aucun trade RAMCE actif</div><div class="empty-sub">Le serveur scrute le marché toutes les 15 min en heures actives</div></div>';
+    return;
+  }
+  el.innerHTML='<div class="trades-list">'+activeTradesRAMCE.map(t=>`
+    <div class="trade-row ramce-row ${t.direction==='BUY'?'buy':'sell'}">
+      <div class="trade-main">
+        <span class="flag">${FLAGS[t.pair]||''}</span>
+        <span class="trade-pair">${t.pair}</span>
+        <span class="dir-badge ${t.direction==='BUY'?'buy':'sell'}">${t.direction==='BUY'?'▲':'▼'} ${t.direction}</span>
+        <span class="regime-badge">${t.regime||''}</span>
+        <span class="confluence-badge">${t.confluence||''}</span>
+        <span style="font-family:'Space Mono',monospace;font-size:13px;color:var(--muted)">@ ${t.entryPrice}</span>
+      </div>
+      <div class="trade-levels">
+        <span class="tp-lv">TP: ${t.tp}</span>
+        <span class="sl-lv">SL: ${t.sl}</span>
+        <span class="rel-badge ramce-rb">${t.reliability}% fiable</span>
+      </div>
+      <div class="reasons">${(t.reasons||[]).map(r=>'<span class="reason-tag ramce-tag">'+r+'</span>').join('')}</div>
+      <div class="trade-meta">
+        <span class="trade-time">${new Date(t.addedAt||t.timestamp).toLocaleString('fr-FR')}</span>
+        <span class="pause-badge">⏸ EN COURS</span>
+        <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--ramce)">ADX ${t.adx||'—'}</span>
+      </div>
+    </div>`).join('')+'</div>';
+}
+
+// ─── RENDER RAMCE HISTORY ─────────────────────────────────────────────────────
+function renderRamceHistory(){
+  const el=document.getElementById('ramceHistContainer');
+  if(!historyRAMCE.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div>Historique RAMCE vide</div><div class="empty-sub">Les trades clôturés apparaîtront ici</div></div>';return}
+  const wins=historyRAMCE.filter(h=>h.result==='WIN').length;
+  const wr=Math.round((wins/historyRAMCE.length)*100);
+  const pips=historyRAMCE.reduce((s,h)=>s+parseFloat(h.pips||0),0);
+  el.innerHTML=
+    '<div class="hist-summary ramce-hs">'
+    +'<div class="sum-stat '+(wr>=60?'good':'bad')+'"><div class="sum-val">'+wr+'%</div><div class="sum-label">WIN RATE RAMCE</div></div>'
+    +'<div class="sum-stat"><div class="sum-val" style="color:var(--buy)">'+wins+'</div><div class="sum-label">GAINS</div></div>'
+    +'<div class="sum-stat"><div class="sum-val" style="color:var(--sell)">'+(historyRAMCE.length-wins)+'</div><div class="sum-label">PERTES</div></div>'
+    +'<div class="sum-stat '+(pips>=0?'good':'bad')+'"><div class="sum-val">'+(pips>=0?'+':'')+pips.toFixed(1)+'</div><div class="sum-label">PIPS TOTAL</div></div>'
+    +'</div>'
+    +'<div class="hist-table ramce-ht"><div class="tbl-header"><span>PAIRE</span><span>DIR.</span><span>ENTRÉE</span><span>CLÔTURE</span><span>PIPS</span><span>RÉSULTAT</span><span>DATE</span></div>'
+    +historyRAMCE.map(h=>'<div class="hist-row '+(h.result==='WIN'?'win':'loss')+'">'
+      +'<span>'+(FLAGS[h.pair]||'')+' '+h.pair+'<br><span style="font-size:9px;color:var(--ramce)">'+(h.regime||'')+'</span></span>'
+      +'<span class="'+(h.direction==='BUY'?'buy-txt':'sell-txt')+'">'+h.direction+'</span>'
+      +'<span>'+h.entryPrice+'</span>'
+      +'<span>'+(h.closePrice||'—')+'</span>'
+      +'<span class="'+(parseFloat(h.pips||0)>=0?'buy-txt':'sell-txt')+'">'+(parseFloat(h.pips||0)>=0?'+':'')+h.pips+'</span>'
+      +'<span><span class="res-badge '+(h.result==='WIN'?'win':'loss')+'">'+(h.result==='WIN'?'✅ GAIN':'❌ PERTE')+'</span></span>'
+      +'<span class="date-sm">'+new Date(h.closedAt).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+'</span>'
+      +'</div>').join('')+'</div>';
+}
+
+// ─── ÉTAT ULTIMATE ────────────────────────────────────────────────────────────
+let ultActiveTrades=JSON.parse(localStorage.getItem('ult_active')||'[]');
+let ultHistory=JSON.parse(localStorage.getItem('ult_history')||'[]');
+let ultLastSignal=JSON.parse(localStorage.getItem('ult_last_signal')||'{}');
+let ultCurrentSignals=[];
+let ultTradeToClose=null;
+
+// ─── INDICATEURS PROD ─────────────────────────────────────────────────────────
+function calcEMA(d,p){if(d.length<=p)return d.map(()=>d[d.length-1]);const k=2/(p+1);let e=d.slice(0,p).reduce((a,b)=>a+b,0)/p;const r=[e];for(let i=p;i<d.length;i++){e=d[i]*k+e*(1-k);r.push(e)}return r}
+function calcATR(h,l,c,p=14){const tr=[];for(let i=1;i<c.length;i++)tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])));return tr.length?tr.slice(-p).reduce((a,b)=>a+b,0)/Math.min(p,tr.length):0.001}
+function calcOBV(c){let obv=0,obv10=0,obv20=0;for(let i=1;i<c.length;i++){const b=Math.abs(c[i]-c[i-1])*10000;obv+=c[i]>c[i-1]?b:-b}for(let i=Math.max(1,c.length-10);i<c.length;i++){const b=Math.abs(c[i]-c[i-1])*10000;obv10+=c[i]>c[i-1]?b:-b}for(let i=Math.max(1,c.length-20);i<c.length;i++){const b=Math.abs(c[i]-c[i-1])*10000;obv20+=c[i]>c[i-1]?b:-b}return{rising:obv10>0,risingLT:obv20>0,value:Math.round(obv)}}
+function calcADX(h,l,c,p=14){const tr=[],pm=[],mm=[];for(let i=1;i<c.length;i++){tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])));const u=h[i]-h[i-1],d=l[i-1]-l[i];pm.push(u>d&&u>0?u:0);mm.push(d>u&&d>0?d:0)}const sT=tr.slice(-p).reduce((a,b)=>a+b,0)||1;const sP=pm.slice(-p).reduce((a,b)=>a+b,0);const sM=mm.slice(-p).reduce((a,b)=>a+b,0);const pDI=(sP/sT)*100,mDI=(sM/sT)*100;return{adx:Math.abs(pDI-mDI)/(pDI+mDI+0.0001)*100,bull:pDI>mDI,pDI,mDI}}
+function calcCCI(h,l,c,p=20){const tp=[];for(let i=0;i<c.length;i++)tp.push((h[i]+l[i]+c[i])/3);const sl=tp.slice(-p);const m=sl.reduce((a,b)=>a+b,0)/p;const md=sl.reduce((a,b)=>a+Math.abs(b-m),0)/p;return md===0?0:(tp[tp.length-1]-m)/(0.015*md)}
+
+// ─── MOTEUR SIGNAUX PROD ──────────────────────────────────────────────────────
+function computeSignal(candles,pair){
+  if(candles.length<60)return null;
+  const closes=candles.map(c=>parseFloat(c.close)),highs=candles.map(c=>parseFloat(c.high)),lows=candles.map(c=>parseFloat(c.low));
+  const price=closes[closes.length-1],dec=pair.includes('JPY')?3:5,n=closes.length-1;
+  if(n<50)return null;
+  const atrVal=calcATR(highs,lows,closes);
+  const mf=(c)=>{const e12=calcEMA(c,12),e26=calcEMA(c,26);const ml=e12.slice(e12.length-e26.length).map((v,i)=>v-e26[i]);const sl=calcEMA(ml,9);const h=ml.slice(ml.length-sl.length).map((v,i)=>v-sl[i]);return{ml:ml[ml.length-1],h:h[h.length-1],ph:h.length>1?h[h.length-2]:h[0]};};
+  const mv=mf(closes),mvp=mf(closes.slice(0,-3));
+  const priceTrend=closes[n]>closes[n-3]?1:-1,macdTrend=mv.ml>mvp.ml?1:-1;
+  const macdDiv=priceTrend!==macdTrend?-priceTrend:0;
+  const high50=Math.max(...highs.slice(-50)),low50=Math.min(...lows.slice(-50)),rng50=high50-low50;
+  const fibZone=price>=(low50+rng50*0.382)&&price<=(low50+rng50*0.618);
+  const isInside=n>=1&&highs[n]<highs[n-1]&&lows[n]>lows[n-1];
+  const insideBarBull=isInside&&closes[n]>closes[n-1];
+  const rH=highs.slice(-25),rL=lows.slice(-25);
+  const arUp=(24-rH.indexOf(Math.max(...rH)))/24*100,arDown=(24-rL.indexOf(Math.min(...rL)))/24*100;
+  const aroonBull=arUp>arDown;
+  const stochH=Math.max(...highs.slice(-14)),stochL=Math.min(...lows.slice(-14));
+  const stochK=stochH===stochL?50:((price-stochL)/(stochH-stochL))*100;
+  const macdMomNeg=mv.h<mv.ph,nearRes=price>Math.max(...highs.slice(-30))*0.995;
+  const adxData=calcADX(highs,lows,closes),cciVal=calcCCI(highs,lows,closes),obv=calcOBV(closes);
+  const obvDisplay=(obv.rising?'↑':'↓')+' '+Math.round(obv.value/1000)+'K';
+  const adxDisplay=adxData.adx.toFixed(1)+' '+(adxData.bull?'▲':'▼');
+  const cciDisplay=cciVal.toFixed(0);
+  const slPips=atrVal*1.5,tpPips=slPips*1.5;
+  if(macdDiv===1&&fibZone&&insideBarBull&&aroonBull){return{pair,direction:'BUY',entryPrice:price.toFixed(dec),sl:(price-slPips).toFixed(dec),tp:(price+tpPips).toFixed(dec),reliability:69,reasons:['Divergence MACD haussière (prix ↓, MACD ↑)','Prix en zone Fibonacci 38.2%-61.8%','Inside Bar haussier','Aroon haussier confirmé','Combo backtestée 69% sur 1 an'],obvDisplay,adxDisplay,cciDisplay,timestamp:new Date().toISOString()};}
+  if(macdDiv===-1&&stochK>80&&macdMomNeg&&nearRes){return{pair,direction:'SELL',entryPrice:price.toFixed(dec),sl:(price+slPips).toFixed(dec),tp:(price-tpPips).toFixed(dec),reliability:59,reasons:['Divergence MACD baissière (prix ↑, MACD ↓)','Stochastique en surachat (K > 80)','Momentum MACD négatif','Prix proche résistance','Combo backtestée 59% sur 1 an'],obvDisplay,adxDisplay,cciDisplay,timestamp:new Date().toISOString()};}
+  return null;
+}
+
+// ─── INDICATEURS ULTIMATE ────────────────────────────────────────────────────
+function calcRSI(closes,period=14){
+  if(closes.length<period+1)return closes.map(()=>50);
+  const gains=[],losses=[];
+  for(let i=1;i<closes.length;i++){const d=closes[i]-closes[i-1];gains.push(d>0?d:0);losses.push(d<0?-d:0)}
+  let ag=gains.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  let al=losses.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  const rsi=[100-100/(1+ag/(al||0.0001))];
+  for(let i=period;i<gains.length;i++){ag=(ag*(period-1)+gains[i])/period;al=(al*(period-1)+losses[i])/period;rsi.push(100-100/(1+ag/(al||0.0001)))}
+  return rsi;
+}
+function calcStochRSI(closes){
+  const rsi=calcRSI(closes,14);
+  if(rsi.length<4)return{k:50,rising:false};
+  const lb=Math.min(14,rsi.length);
+  const slice=rsi.slice(-lb);
+  const minR=Math.min(...slice),maxR=Math.max(...slice);
+  const cur=rsi[rsi.length-1],prev=rsi.length>1?rsi[rsi.length-2]:cur;
+  const k=maxR===minR?50:((cur-minR)/(maxR-minR))*100;
+  const kP=maxR===minR?50:((prev-minR)/(maxR-minR))*100;
+  return{k,rising:k>kP};
+}
+function calcHeikenAshi(opens,highs,lows,closes){
+  if(opens.length<2)return{bull:false};
+  const ha=[];let haO=(opens[0]+closes[0])/2;
+  for(let i=0;i<closes.length;i++){const haC=(opens[i]+highs[i]+lows[i]+closes[i])/4;if(i>0)haO=(ha[i-1].o+ha[i-1].c)/2;ha.push({o:haO,c:haC})}
+  const last=ha[ha.length-1];
+  return{bull:last.c>last.o};
+}
+function calcConnors(closes){
+  const rsi3=calcRSI(closes,3);const v=rsi3[rsi3.length-1];
+  return{oversold:v<30,overbought:v>70,val:Math.round(v)};
+}
+function calcPivots(highs,lows,closes){
+  const n=closes.length;if(n<3)return{pivot:0,r1:0,r2:0,s1:0};
+  const pH=Math.max(...highs.slice(-20,-1)),pL=Math.min(...lows.slice(-20,-1)),pC=closes[n-2];
+  const piv=(pH+pL+pC)/3;
+  return{pivot:piv,r1:2*piv-pL,r2:piv+(pH-pL),s1:2*piv-pH};
+}
+function detectDblTop(highs,closes){
+  const h=highs.slice(-30),maxH=Math.max(...h),maxI=h.lastIndexOf(maxH);
+  if(maxI<5)return false;
+  for(let i=0;i<maxI-4;i++){if(Math.abs(h[i]-maxH)/maxH<0.004){const valley=Math.min(...h.slice(i,maxI));return closes[closes.length-1]<valley*1.002}}
+  return false;
+}
+function detectTriangleDes(highs,lows,closes){
+  if(highs.length<20)return false;
+  const rH=highs.slice(-15),rL=lows.slice(-15);
+  const avgH1=rH.slice(0,7).reduce((a,b)=>a+b,0)/7,avgH2=rH.slice(7).reduce((a,b)=>a+b,0)/8;
+  const lowerHighs=avgH2<avgH1*0.998;
+  const minL=Math.min(...rL),maxL=Math.max(...rL);
+  const stableLows=maxL>0?(maxL-minL)/minL<0.005:false;
+  const nearSup=closes[closes.length-1]<(minL||0)*1.003;
+  return lowerHighs&&stableLows&&nearSup;
+}
+
+// ─── MOTEUR ULTIMATE ──────────────────────────────────────────────────────────
+// BUY  : macdDiv + stochRSIMid + adxDir + heikenDir + connorsExt | WR 67% · WF-moy 78% · PF 2.97
+// SELL : macdDiv + stochRSIMid + pivotR2 + dblTop + triangleDes  | WR 72% · WF-moy 72% · PF 2.87
+function computeUltimate(candles,pair){
+  if(candles.length<60)return null;
+  const closes=candles.map(c=>parseFloat(c.close));
+  const highs=candles.map(c=>parseFloat(c.high));
+  const lows=candles.map(c=>parseFloat(c.low));
+  const opens=candles.map(c=>parseFloat(c.open));
+  const n=closes.length-1;
+  if(n<50)return null;
+  const price=closes[n],dec=pair.includes('JPY')?3:5;
+  const atrVal=calcATR(highs,lows,closes);
+  const slPips=atrVal*1.5,tpPips=slPips*1.5;
+
+  // MACD divergence
+  const e12=calcEMA(closes,12),e26=calcEMA(closes,26);
+  const ml=e12.slice(e12.length-e26.length).map((v,i)=>v-e26[i]);
+  const e12p=calcEMA(closes.slice(0,-3),12),e26p=calcEMA(closes.slice(0,-3),26);
+  const mlp=e12p.slice(e12p.length-e26p.length).map((v,i)=>v-e26p[i]);
+  const priceTrend=closes[n]>closes[n-3]?1:-1;
+  const macdTrend=ml[ml.length-1]>mlp[mlp.length-1]?1:-1;
+  const macdDiv=priceTrend!==macdTrend?-priceTrend:0;
+
+  const stRSI=calcStochRSI(closes);
+  const adxD=calcADX(highs,lows,closes);
+  const ha=calcHeikenAshi(opens,highs,lows,closes);
+  const cnrs=calcConnors(closes);
+  const pivs=calcPivots(highs,lows,closes);
+  const dTop=detectDblTop(highs,closes);
+  const triD=detectTriangleDes(highs,lows,closes);
+
+  const bS=[macdDiv===1,stRSI.k>50&&stRSI.rising,adxD.bull,ha.bull,cnrs.oversold];
+  const bN=['macdDiv haussière','StochRSI > 50 ↑','ADX direction ↑','Heiken Ashi ↑','Connors RSI survendu'];
+  const buyHit=bS.filter(Boolean).length;
+
+  const sS=[macdDiv===-1,stRSI.k<50&&!stRSI.rising,price>=pivs.r1,dTop,triD];
+  const sN=['macdDiv baissière','StochRSI < 50 ↓','Zone Pivot R1/R2','Double sommet','Triangle descendant'];
+  const sellHit=sS.filter(Boolean).length;
+
+  const obv=calcOBV(closes);
+  const stDisp=stRSI.k.toFixed(0)+'%'+(stRSI.rising?'↑':'↓');
+
+  if(buyHit>=4){return{pair,direction:'BUY',entryPrice:price.toFixed(dec),sl:(price-slPips).toFixed(dec),tp:(price+tpPips).toFixed(dec),reliability:67,signalHits:buyHit,signalNames:bN,signalStates:bS,reasons:bN.filter((_,i)=>bS[i]).map(r=>'✓ '+r),obvDisplay:(obv.rising?'↑':'↓')+Math.round(obv.value/1000)+'K',adxDisplay:adxD.adx.toFixed(1)+(adxD.bull?'▲':'▼'),cciDisplay:stDisp,timestamp:new Date().toISOString(),engine:'ULTIMATE'};}
+  if(sellHit>=4){return{pair,direction:'SELL',entryPrice:price.toFixed(dec),sl:(price+slPips).toFixed(dec),tp:(price-tpPips).toFixed(dec),reliability:72,signalHits:sellHit,signalNames:sN,signalStates:sS,reasons:sN.filter((_,i)=>sS[i]).map(r=>'✓ '+r),obvDisplay:(obv.rising?'↑':'↓')+Math.round(obv.value/1000)+'K',adxDisplay:adxD.adx.toFixed(1)+(adxD.bull?'▲':'▼'),cciDisplay:stDisp,timestamp:new Date().toISOString(),engine:'ULTIMATE'};}
+  return null;
+}
+async function fetchCandles(pair){const r=await fetch(`https://api.twelvedata.com/time_series?symbol=${pair}&interval=4h&outputsize=200&apikey=${API_KEY}`);const d=await r.json();if(!d.values||d.status==='error')return null;return d.values.reverse()}
+
+// ─── SCAN PROD ────────────────────────────────────────────────────────────────
+async function runScan(){
+  const btn=document.getElementById('refreshBtn'),dot=document.getElementById('statusDot'),txt=document.getElementById('statusText');
+  btn.disabled=true;btn.textContent='⟳ SCAN';dot.className='pulse-dot loading';
+  document.getElementById('loadingBar').style.display='block';
+  const activePairs=activeTrades.map(t=>t.pair),now=Date.now(),ANTI=24*60*60*1000;
+  currentSignals=[];
+  let i=0;
+  for(const pair of PAIRS){
+    i++;
+    txt.textContent=`${pair} (${i}/${PAIRS.length})`;
+    if(activePairs.includes(pair)){i--;continue}
+    if(lastSignalTime[pair]&&(now-lastSignalTime[pair])<ANTI){i--;continue}
+    try{
+      const candles=await fetchCandles(pair);
+      if(!candles){await sleep(3000);continue}
+      const sig=computeSignal(candles,pair);
+      if(sig)currentSignals.push(sig);
+      await sleep(3000)
+    }catch(e){console.error(pair,e);await sleep(3000)}
+  }
+  document.getElementById('loadingBar').style.display='none';
+  dot.className='pulse-dot';txt.textContent='LIVE';btn.disabled=false;btn.textContent='↺ SCAN';
+  const ui=document.getElementById('updateInfo');ui.style.display='block';
+  ui.textContent=`Analyse : ${new Date().toLocaleTimeString('fr-FR')} — ${currentSignals.length} signal(s) détecté(s)`;
+  renderSignals();updateStats();countdownVal=600;
+  if(RAMCE_URL)loadRamce();
+  if(ULT_URL)loadUltimate();
+}
+
+// ─── ULTIMATE SERVER FETCH (identique à loadRamce) ───────────────────────────
+async function loadUltimate(){
+  const dot=document.getElementById('ultServerDot');
+  const txt=document.getElementById('ultServerTxt');
+  if(!ULT_URL){
+    if(dot)dot.className='ramce-server-status';
+    if(txt)txt.innerHTML='NON CONFIGURÉ — <a href="#" onclick="document.getElementById(\'ultModal\').style.display=\'flex\';return false" style="color:var(--ult)">Connecter le serveur Render</a>';
+    renderUltEmpty();
+    return;
+  }
+  try{
+    const r=await fetch(ULT_URL+'/status',{signal:AbortSignal.timeout(8000)});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    ultActiveTrades=d.activeTrades||[];
+    ultHistory=d.history||[];
+    updateUltStats(d.stats);
+    renderUltActives();
+    if(dot){dot.className='ramce-server-status ok'}
+    if(txt)txt.innerHTML='<span class="ramce-server-status ok"></span>EN LIGNE — '+ultActiveTrades.length+' trade(s) actif(s)';
+    showNotif('⬡ ULTIMATE connecté — '+ultActiveTrades.length+' trade(s)','info');
+  }catch(e){
+    if(dot){dot.className='ramce-server-status err'}
+    if(txt)txt.innerHTML='<span class="ramce-server-status err"></span>HORS LIGNE — <a href="#" onclick="loadUltimate()" style="color:var(--ult)">Réessayer</a>';
+    console.error('ULTIMATE fetch:',e.message);
+  }
+}
+
+// Scan manuel via le serveur
+async function triggerUltScan(){
+  if(!ULT_URL){showNotif('⬡ Serveur ULTIMATE non configuré','error');return}
+  try{
+    await fetch(ULT_URL+'/scan',{method:'POST',signal:AbortSignal.timeout(5000)});
+    showNotif('⬡ Scan ULTIMATE lancé sur le serveur...','info');
+    setTimeout(loadUltimate,3000);
+  }catch(e){showNotif('⬡ Serveur injoignable','error')}
+}
+
+// Clôture manuelle → appel /close sur le serveur
+function openUltCloseModal(trade){
+  ultTradeToClose=trade;
+  document.getElementById('ultCloseTitle').textContent='Clôturer '+trade.pair+' '+trade.direction;
+  document.getElementById('ultCloseDesc').textContent='Entrée: '+trade.entryPrice+' · TP: '+trade.tp+' · SL: '+trade.sl;
+  document.getElementById('ultClosePriceInput').value='';
+  document.getElementById('ultCloseModal').style.display='flex';
+}
+async function confirmUltClose(result){
+  if(!ultTradeToClose)return;
+  const t=ultTradeToClose;
+  const cp=document.getElementById('ultClosePriceInput').value||String(result==='WIN'?t.tp:t.sl);
+  document.getElementById('ultCloseModal').style.display='none';
+  ultTradeToClose=null;
+  if(ULT_URL){
+    try{
+      await fetch(ULT_URL+'/close',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pair:t.pair,result,closePrice:cp})});
+      showNotif(`${result==='WIN'?'✅ GAIN':'❌ PERTE'} — ${t.pair} enregistré sur le serveur`,'success');
+      setTimeout(loadUltimate,1500);
+    }catch(e){showNotif('⬡ Erreur serveur ULTIMATE','error')}
+  }
+}
+
+// Empty state quand pas de serveur
+function renderUltEmpty(){
+  const el=document.getElementById('ultActivesContainer');
+  if(el)el.innerHTML='<div class="empty-state"><div class="empty-icon" style="color:var(--ult)">⬡</div><div>Serveur ULTIMATE non connecté</div><div class="empty-sub">Cliquez sur ⬡ dans le header pour configurer l\'URL Render</div></div>';
+}
+
+// Render actives ULTIMATE
+function renderUltActives(){
+  const el=document.getElementById('ultActivesContainer');
+  if(!el)return;
+  if(!ultActiveTrades.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">⚡</div><div>Aucun trade ULTIMATE actif</div><div class="empty-sub">Le serveur scrute le marché toutes les 15 min · BUY 67% · SELL 72%</div></div>';
+    return;
+  }
+  el.innerHTML='<div class="trades-list">'+ultActiveTrades.map(t=>`
+    <div class="trade-row ${t.direction==='BUY'?'buy':'sell'}" style="border-color:var(--ult-border)">
+      <div class="trade-main">
+        <span class="flag">${FLAGS[t.pair]||''}</span>
+        <span class="trade-pair">${t.pair}</span>
+        <span class="dir-badge ${t.direction==='BUY'?'buy':'sell'}">${t.direction==='BUY'?'▲':'▼'} ${t.direction}</span>
+        <span style="font-family:'Space Mono',monospace;font-size:11px;background:var(--ult-bg);color:var(--ult);padding:2px 7px;border-radius:3px">${t.reliability}% fiable</span>
+        <span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted)">@ ${t.entryPrice}</span>
+      </div>
+      <div class="reasons">${(t.signalNames||t.reasons||[]).filter((_,i)=>(t.signalStates||[])[i]!==false).slice(0,3).map(r=>'<span class="reason-tag" style="background:var(--ult-bg);border-color:var(--ult-border);color:var(--ult)">'+r+'</span>').join('')}</div>
+      <div class="trade-levels">
+        <span class="tp-lv">TP: ${t.tp}</span>
+        <span class="sl-lv">SL: ${t.sl}</span>
+        <span class="pause-badge">⏸ EN COURS</span>
+      </div>
+      <div class="trade-meta">
+        <span class="trade-time">${new Date(t.addedAt||t.timestamp).toLocaleString('fr-FR')}</span>
+        <button class="ult-close-btn" onclick='openUltCloseModal(${JSON.stringify(t).replace(/'/g,"&#39;")})'>Clôturer →</button>
+      </div>
+    </div>`).join('')+'</div>';
+}
+
+// Render history ULTIMATE
+function renderUltHistory(){
+  const el=document.getElementById('ultHistContainer');
+  if(!el)return;
+  if(!ultHistory.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div>Historique ULTIMATE vide</div></div>';return}
+  const wins=ultHistory.filter(h=>h.result==='WIN').length;
+  const wr=Math.round(wins/ultHistory.length*100);
+  const pips=ultHistory.reduce((s,h)=>s+parseFloat(h.pips||0),0);
+  el.innerHTML=`<div class="hist-summary" style="border-color:var(--ult-border)">
+    <div class="sum-stat ${wr>=60?'good':'bad'}"><div class="sum-val">${wr}%</div><div class="sum-label">WIN RATE</div></div>
+    <div class="sum-stat"><div class="sum-val" style="color:var(--ult)">${ultHistory.length}</div><div class="sum-label">TRADES</div></div>
+    <div class="sum-stat ${pips>=0?'good':'bad'}"><div class="sum-val">${pips>=0?'+':''}${pips.toFixed(1)}</div><div class="sum-label">PIPS</div></div>
+    <div class="sum-stat"><div class="sum-val" style="color:var(--buy)">${wins}</div><div class="sum-label">GAINS</div></div>
+  </div>
+  <div class="hist-table" style="border-color:var(--ult-border)">
+    <div class="tbl-header"><span>PAIRE</span><span>DIR</span><span>ENTRÉE</span><span>CLÔTURE</span><span>PIPS</span><span>RÉSULTAT</span><span>DATE</span></div>
+    ${ultHistory.map(h=>`<div class="hist-row ${h.result==='WIN'?'win':'loss'}"><span>${FLAGS[h.pair]||''}${h.pair}</span><span class="${h.direction==='BUY'?'buy-txt':'sell-txt'}">${h.direction}</span><span>${h.entryPrice}</span><span>${h.closePrice}</span><span class="${parseFloat(h.pips)>=0?'buy-txt':'sell-txt'}">${parseFloat(h.pips)>=0?'+':''}${h.pips}</span><span><span class="res-badge ${h.result==='WIN'?'win':'loss'}">${h.result==='WIN'?'✅ GAIN':'❌ PERTE'}</span></span><span class="date-sm">${new Date(h.closedAt).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span></div>`).join('')}
+  </div>`;
+}
+
+// Stats ULTIMATE
+function updateUltStats(stats){
+  document.getElementById('uActive').textContent=ultActiveTrades.length;
+  document.getElementById('uHistory').textContent=ultHistory.length;
+  document.getElementById('uTabActive').textContent=ultActiveTrades.length;
+  document.getElementById('uTabHist').textContent=ultHistory.length;
+  if(stats){
+    document.getElementById('uWinRate').textContent=stats.winRate||'—';
+    document.getElementById('uPips').textContent=stats.totalPips||'—';
+  }
+}
+// ─── ULTIMATE TABS ────────────────────────────────────────────────────────────
+function showUltTab(name,btn){
+  ['actifs','historique'].forEach(t=>{document.getElementById('ult-'+t).style.display=t===name?'block':'none'});
+  document.querySelectorAll('#section-ult .tab').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  if(name==='historique')renderUltHistory();
+  if(name==='actifs')renderUltActives();
+}
+
+// ─── ULTIMATE CLOSE TRADE ─────────────────────────────────────────────────────
+function openUltCloseModal(trade){
+  ultTradeToClose=trade;
+  document.getElementById('ultCloseTitle').textContent=`Clôturer ${trade.pair} ${trade.direction}`;
+  document.getElementById('ultCloseDesc').textContent=`Entrée: ${trade.entryPrice} · TP: ${trade.tp} · SL: ${trade.sl}`;
+  document.getElementById('ultClosePriceInput').value='';
+  document.getElementById('ultCloseModal').style.display='flex';
+}
+function confirmUltClose(result){
+  if(!ultTradeToClose)return;
+  const t=ultTradeToClose;
+  const cp=parseFloat(document.getElementById('ultClosePriceInput').value)||parseFloat(result==='WIN'?t.tp:t.sl);
+  const en=parseFloat(t.entryPrice);
+  const dec=t.pair.includes('JPY')?3:5;
+  const pips=((t.direction==='BUY'?cp-en:en-cp)/(t.pair.includes('JPY')?0.01:0.0001)).toFixed(1);
+  ultHistory.unshift({...t,result,closePrice:isNaN(cp)?String(result==='WIN'?t.tp:t.sl):cp.toFixed(dec),pips,closedAt:new Date().toISOString()});
+  if(ultHistory.length>100)ultHistory=ultHistory.slice(0,100);
+  ultActiveTrades=ultActiveTrades.filter(tr=>tr.pair!==t.pair);
+  localStorage.setItem('ult_active',JSON.stringify(ultActiveTrades));
+  localStorage.setItem('ult_history',JSON.stringify(ultHistory));
+  document.getElementById('ultCloseModal').style.display='none';
+  ultTradeToClose=null;
+  showNotif(`${result==='WIN'?'✅ GAIN':'❌ PERTE'} — ${t.pair} — ${pips>0?'+':''}${pips} pips`,result==='WIN'?'success':'error');
+  renderUltActives();renderUltHistory();updateUltStats();
+}
+
+// ─── RENDER ULTIMATE SIGNALS ──────────────────────────────────────────────────
+function renderUltSignals(){
+  const el=document.getElementById('ultSignalsContainer');
+  if(!ultCurrentSignals.length){el.innerHTML='<div class="empty-state"><div class="empty-icon" style="color:var(--ult)">⬡</div><div>Aucun signal ULTIMATE</div><div class="empty-sub">4/5 signaux requis — conditions strictes</div></div>';return}
+  el.innerHTML='<div class="signals-grid">'+ultCurrentSignals.map(s=>{
+    const breakdown=(s.signalNames||[]).map((nm,i)=>`<div class="sig-row"><div class="sig-dot ${(s.signalStates||[])[i]?'on':'off'}"></div><span class="sig-lbl ${(s.signalStates||[])[i]?'on':''}">${nm}</span></div>`).join('');
+    return`<div class="signal-card ${s.direction==='BUY'?'buy':'sell'} ult">
+      <div class="card-header">
+        <div class="pair-info"><span class="flag">${FLAGS[s.pair]||''}</span><span class="pair-name">${s.pair}</span></div>
+        <div class="dir-badge ${s.direction==='BUY'?'buy':'sell'}">${s.direction==='BUY'?'▲ BUY':'▼ SELL'}</div>
+      </div>
+      <div class="reliability-bar">
+        <div class="rel-label">FIABILITÉ</div>
+        <div class="rel-track"><div class="rel-fill" style="width:${s.reliability}%;background:linear-gradient(90deg,var(--ult),var(--buy))"></div></div>
+        <div class="rel-val ult-rel">${s.reliability}%</div>
+      </div>
+      <div class="price-grid">
+        <div class="price-item entry"><div class="price-label">ENTRÉE</div><div class="price-val">${s.entryPrice}</div></div>
+        <div class="price-item tp"><div class="price-label">TP ✓</div><div class="price-val">${s.tp}</div></div>
+        <div class="price-item sl"><div class="price-label">SL ✗</div><div class="price-val">${s.sl}</div></div>
+      </div>
+      <div class="sig-count-ult">Signaux : ${s.signalHits}/5</div>
+      <div class="sig-breakdown">${breakdown}</div>
+      <button class="trade-btn ult-btn" onclick='addUltTrade(${JSON.stringify(s).replace(/'/g,"&#39;")})'>PRENDRE LE SIGNAL →</button>
+    </div>`}).join('')+'</div>';
+  document.getElementById('uSignals').textContent=ultCurrentSignals.length;
+}
+
+// ─── RENDER ULTIMATE ACTIVES ──────────────────────────────────────────────────
+function renderUltActives(){
+  const el=document.getElementById('ultActivesContainer');
+  if(!ultActiveTrades.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">⚡</div><div>Aucun trade ULTIMATE actif</div></div>';return}
+  el.innerHTML='<div class="trades-list">'+ultActiveTrades.map(t=>`
+    <div class="trade-row ${t.direction==='BUY'?'buy':'sell'}">
+      <div class="trade-main">
+        <span class="flag">${FLAGS[t.pair]||''}</span><span class="trade-pair">${t.pair}</span>
+        <span class="dir-badge ${t.direction==='BUY'?'buy':'sell'}">${t.direction==='BUY'?'▲':'▼'} ${t.direction}</span>
+        <span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted)">@ ${t.entryPrice}</span>
+      </div>
+      <div class="trade-levels">
+        <span class="tp-lv">TP: ${t.tp}</span><span class="sl-lv">SL: ${t.sl}</span>
+        <span class="rel-badge" style="color:var(--ult);background:var(--ult-bg)">${t.reliability}% fiable</span>
+        <span class="pause-badge">⏸ EN COURS</span>
+      </div>
+      <div class="trade-meta">
+        <span class="trade-time">${new Date(t.timestamp||t.addedAt).toLocaleString('fr-FR')}</span>
+        <button class="ult-close-btn" onclick='openUltCloseModal(${JSON.stringify(t).replace(/'/g,"&#39;")})'>Clôturer</button>
+      </div>
+    </div>`).join('')+'</div>';
+}
+
+// ─── RENDER ULTIMATE HISTORY ──────────────────────────────────────────────────
+function renderUltHistory(){
+  const el=document.getElementById('ultHistContainer');
+  if(!ultHistory.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div>Historique ULTIMATE vide</div></div>';return}
+  const wins=ultHistory.filter(h=>h.result==='WIN').length;
+  const wr=Math.round(wins/ultHistory.length*100);
+  const pips=ultHistory.reduce((s,h)=>s+parseFloat(h.pips||0),0);
+  el.innerHTML=`<div class="hist-summary" style="border-color:var(--ult-border)">
+    <div class="sum-stat ${wr>=60?'good':'bad'}"><div class="sum-val">${wr}%</div><div class="sum-label">WIN RATE</div></div>
+    <div class="sum-stat"><div class="sum-val" style="color:var(--ult)">${ultHistory.length}</div><div class="sum-label">TRADES</div></div>
+    <div class="sum-stat ${pips>=0?'good':'bad'}"><div class="sum-val">${pips>=0?'+':''}${pips.toFixed(1)}</div><div class="sum-label">PIPS</div></div>
+    <div class="sum-stat"><div class="sum-val" style="color:var(--ult)">${wins}</div><div class="sum-label">GAINS</div></div>
+  </div>
+  <div class="hist-table" style="background:var(--ult-bg);border-color:var(--ult-border)">
+    <div class="tbl-header"><span>PAIRE</span><span>DIR</span><span>ENTRÉE</span><span>CLÔTURE</span><span>PIPS</span><span>RÉSULTAT</span><span>DATE</span></div>
+    ${ultHistory.map(h=>`<div class="hist-row ${h.result==='WIN'?'win':'loss'}"><span>${FLAGS[h.pair]||''}${h.pair}</span><span class="${h.direction==='BUY'?'buy-txt':'sell-txt'}">${h.direction}</span><span>${h.entryPrice}</span><span>${h.closePrice}</span><span class="${parseFloat(h.pips)>=0?'buy-txt':'sell-txt'}">${parseFloat(h.pips)>=0?'+':''}${h.pips}</span><span><span class="res-badge ${h.result==='WIN'?'win':'loss'}">${h.result==='WIN'?'✅ GAIN':'❌ PERTE'}</span></span><span class="date-sm">${new Date(h.closedAt).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span></div>`).join('')}
+  </div>
+  <button class="clear-btn" onclick="clearUltHistory()">🗑 Effacer l'historique ULTIMATE</button>`;
+}
+function clearUltHistory(){if(confirm("Effacer l'historique ULTIMATE ?")){ultHistory=[];localStorage.removeItem('ult_history');renderUltHistory();updateUltStats()}}
+
+// ─── UPDATE ULTIMATE STATS ────────────────────────────────────────────────────
+function updateUltStats(){
+  const wins=ultHistory.filter(h=>h.result==='WIN').length;
+  const wr=ultHistory.length?Math.round(wins/ultHistory.length*100):0;
+  const pips=ultHistory.reduce((s,h)=>s+parseFloat(h.pips||0),0);
+  document.getElementById('uActive').textContent=ultActiveTrades.length;
+  document.getElementById('uSignals').textContent=ultCurrentSignals.length;
+  document.getElementById('uWinRate').textContent=ultHistory.length?wr+'%':'—';
+  document.getElementById('uPips').textContent=ultHistory.length?(pips>=0?'+':'')+pips.toFixed(1)+'pip':'—';
+  document.getElementById('uHistory').textContent=ultHistory.length;
+  document.getElementById('uTabActive').textContent=ultActiveTrades.length;
+  document.getElementById('uTabHist').textContent=ultHistory.length;
+}
+async function checkTrades(){
+  for(const trade of [...activeTrades]){
+    try{const r=await fetch(`https://api.twelvedata.com/price?symbol=${trade.pair}&apikey=${API_KEY}`);const d=await r.json();if(!d.price)continue;const cur=parseFloat(d.price),tp=parseFloat(trade.tp),sl=parseFloat(trade.sl),en=parseFloat(trade.entryPrice);let closed=false,result=null,closePrice=null;if(trade.direction==='BUY'){if(cur>=tp){closed=true;result='WIN';closePrice=tp}else if(cur<=sl){closed=true;result='LOSS';closePrice=sl}}else{if(cur<=tp){closed=true;result='WIN';closePrice=tp}else if(cur>=sl){closed=true;result='LOSS';closePrice=sl}}if(closed){const dec=trade.pair.includes('JPY')?3:5;const pips=((trade.direction==='BUY'?closePrice-en:en-closePrice)/(trade.pair.includes('JPY')?0.01:0.0001)).toFixed(1);history.unshift({...trade,result,closePrice:closePrice.toFixed(dec),pips,closedAt:new Date().toISOString()});if(history.length>100)history=history.slice(0,100);activeTrades=activeTrades.filter(t=>t.pair!==trade.pair);localStorage.setItem('forex_active',JSON.stringify(activeTrades));localStorage.setItem('forex_history',JSON.stringify(history));syncCloud();showNotif(`${result==='WIN'?'✅ GAIN':'❌ PERTE'} sur ${trade.pair} — ${pips>0?'+':''}${pips} pips`,result==='WIN'?'success':'error');renderActives();renderHistory();updateStats()}await sleep(2000)}catch(e){console.error(e)}}
+}
+
+// ─── ADD TRADE ────────────────────────────────────────────────────────────────
+function addTrade(sig){
+  if(activeTrades.find(t=>t.pair===sig.pair))return;
+  activeTrades.push({...sig,addedAt:new Date().toISOString()});
+  lastSignalTime[sig.pair]=Date.now();
+  localStorage.setItem('forex_active',JSON.stringify(activeTrades));
+  localStorage.setItem('forex_last_signal',JSON.stringify(lastSignalTime));
+  syncCloud();
+  showNotif(`🚨 SIGNAL ${sig.direction} sur ${sig.pair} — Fiabilité: ${sig.reliability}%`,'success');
+  renderActives();updateStats();
+}
+
+// ─── RENDER PROD SIGNALS ──────────────────────────────────────────────────────
+function renderSignals(){
+  const el=document.getElementById('signalsContainer');
+  if(!currentSignals.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">◎</div><div>Aucun signal détecté — marché en attente</div></div>';return}
+  el.innerHTML='<div class="signals-grid">'+currentSignals.map(s=>`
+    <div class="signal-card ${s.direction==='BUY'?'buy':'sell'}">
+      <div class="card-header">
+        <div class="pair-info"><span class="flag">${FLAGS[s.pair]||''}</span><span class="pair-name">${s.pair}</span></div>
+        <div class="dir-badge ${s.direction==='BUY'?'buy':'sell'}">${s.direction==='BUY'?'▲ BUY':'▼ SELL'}</div>
+      </div>
+      <div class="reliability-bar">
+        <div class="rel-label">FIABILITÉ</div>
+        <div class="rel-track"><div class="rel-fill" style="width:${s.reliability}%"></div></div>
+        <div class="rel-val">${s.reliability}%</div>
+      </div>
+      <div class="price-grid">
+        <div class="price-item entry"><div class="price-label">ENTRÉE</div><div class="price-val">${s.entryPrice}</div></div>
+        <div class="price-item tp"><div class="price-label">TP ✓</div><div class="price-val">${s.tp}</div></div>
+        <div class="price-item sl"><div class="price-label">SL ✗</div><div class="price-val">${s.sl}</div></div>
+      </div>
+      <div class="indicators-row">
+        <span class="ind">OBV ${s.obvDisplay||'—'}</span>
+        <span class="ind">ADX ${s.adxDisplay||'—'}</span>
+        <span class="ind">CCI ${s.cciDisplay||'—'}</span>
+      </div>
+      <div class="reasons">${(s.reasons||[]).map(r=>'<span class="reason-tag">'+r+'</span>').join('')}</div>
+      <button class="trade-btn" onclick="addTrade(${JSON.stringify(s).replace(/"/g,'&quot;')})">PRENDRE LE SIGNAL →</button>
+    </div>`).join('')+'</div>';
+  document.getElementById('sSignals').textContent=currentSignals.length;
+}
+
+// ─── RENDER PROD ACTIVES ──────────────────────────────────────────────────────
+function renderActives(){
+  const el=document.getElementById('activesContainer');
+  if(!activeTrades.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">⚡</div><div>Aucun trade actif</div></div>';return}
+  el.innerHTML='<div class="trades-list">'+activeTrades.map(t=>`
+    <div class="trade-row ${t.direction==='BUY'?'buy':'sell'}">
+      <div class="trade-main">
+        <span class="flag">${FLAGS[t.pair]||''}</span><span class="trade-pair">${t.pair}</span>
+        <span class="dir-badge ${t.direction==='BUY'?'buy':'sell'}">${t.direction==='BUY'?'▲':'▼'} ${t.direction}</span>
+        <span style="font-family:'Space Mono',monospace;font-size:13px;color:var(--muted)">@ ${t.entryPrice}</span>
+      </div>
+      <div class="trade-levels">
+        <span class="tp-lv">TP: ${t.tp}</span><span class="sl-lv">SL: ${t.sl}</span>
+        <span class="rel-badge">${t.reliability}% fiable</span>
+      </div>
+      <div class="trade-meta">
+        <span class="trade-time">${new Date(t.timestamp).toLocaleString('fr-FR')}</span>
+        <span class="pause-badge">⏸ EN COURS</span>
+      </div>
+    </div>`).join('')+'</div>';
+}
+
+// ─── RENDER PROD HISTORY ──────────────────────────────────────────────────────
+function renderHistory(){
+  const el=document.getElementById('histContainer');
+  if(!history.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div>Historique vide</div></div>';return}
+  const wins=history.filter(h=>h.result==='WIN').length,wr=Math.round((wins/history.length)*100),pips=history.reduce((s,h)=>s+parseFloat(h.pips||0),0);
+  const buyH=history.filter(h=>h.direction==='BUY'),sellH=history.filter(h=>h.direction==='SELL');
+  const wrBuy=buyH.length?Math.round(buyH.filter(h=>h.result==='WIN').length/buyH.length*100):null;
+  const wrSell=sellH.length?Math.round(sellH.filter(h=>h.result==='WIN').length/sellH.length*100):null;
+  const pairMap={};history.forEach(h=>{if(!pairMap[h.pair])pairMap[h.pair]={wins:0,total:0};pairMap[h.pair].total++;if(h.result==='WIN')pairMap[h.pair].wins++;});
+  const pairRows=Object.entries(pairMap).sort((a,b)=>b[1].total-a[1].total).map(([pair,v])=>{
+    const wr2=Math.round(v.wins/v.total*100),col=wr2>=60?'var(--buy)':'var(--sell)',barW=Math.round(wr2*0.8);
+    return '<div style="display:grid;grid-template-columns:1.4fr 0.8fr 0.8fr 2fr;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);font-size:12px;font-family:Space Mono,monospace;border-left:2px solid '+col+'">'
+      +'<span>'+(FLAGS[pair]||'')+' '+pair+'</span>'
+      +'<span style="color:var(--muted)">'+v.total+' trades</span>'
+      +'<span style="color:'+col+';font-weight:700">'+wr2+'%</span>'
+      +'<span style="display:flex;align-items:center;gap:8px"><span style="display:block;height:4px;width:'+barW+'px;max-width:80px;background:'+col+';border-radius:2px"></span><span style="color:var(--buy);font-size:11px">'+v.wins+'W</span><span style="color:var(--sell);font-size:11px">'+(v.total-v.wins)+'L</span></span>'
+      +'</div>';}).join('');
+  el.innerHTML=
+    '<div class="hist-summary"><div class="sum-stat '+(wr>=60?'good':'bad')+'"><div class="sum-val">'+wr+'%</div><div class="sum-label">WIN RATE TOTAL</div></div>'
+    +'<div class="sum-stat"><div class="sum-val" style="color:'+(wrBuy!=null&&wrBuy>=60?'var(--buy)':'var(--sell)')+'">'+(wrBuy!=null?wrBuy+'%':'—')+'</div><div class="sum-label">WIN RATE BUY</div></div>'
+    +'<div class="sum-stat"><div class="sum-val" style="color:'+(wrSell!=null&&wrSell>=60?'var(--buy)':'var(--sell)')+'">'+(wrSell!=null?wrSell+'%':'—')+'</div><div class="sum-label">WIN RATE SELL</div></div>'
+    +'<div class="sum-stat '+(pips>=0?'good':'bad')+'"><div class="sum-val">'+(pips>=0?'+':'')+pips.toFixed(1)+'</div><div class="sum-label">PIPS TOTAL</div></div></div>'
+    +'<div style="margin-bottom:24px"><div style="font-family:Space Mono,monospace;font-size:11px;color:var(--accent);letter-spacing:2px;margin-bottom:12px">📊 WIN RATE PAR DEVISE</div>'
+    +'<div class="hist-table"><div style="display:grid;grid-template-columns:1.4fr 0.8fr 0.8fr 2fr;padding:12px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:9px;color:var(--muted);letter-spacing:2px;font-family:Space Mono,monospace"><span>PAIRE</span><span>TRADES</span><span>WIN RATE</span><span>DÉTAIL</span></div>'
+    +pairRows+'</div></div>'
+    +'<div style="font-family:Space Mono,monospace;font-size:11px;color:var(--accent);letter-spacing:2px;margin-bottom:12px">📋 HISTORIQUE DÉTAILLÉ</div><div class="hist-table"><div class="tbl-header"><span>PAIRE</span><span>DIR.</span><span>ENTRÉE</span><span>CLÔTURE</span><span>PIPS</span><span>RÉSULTAT</span><span>DATE</span></div>'
+    +history.map(h=>'<div class="hist-row '+(h.result==='WIN'?'win':'loss')+'"><span>'+(FLAGS[h.pair]||'')+h.pair+'</span><span class="'+(h.direction==='BUY'?'buy-txt':'sell-txt')+'">'+h.direction+'</span><span>'+h.entryPrice+'</span><span>'+h.closePrice+'</span><span class="'+(parseFloat(h.pips)>=0?'buy-txt':'sell-txt')+'">'+(parseFloat(h.pips)>=0?'+':'')+h.pips+'</span><span><span class="res-badge '+(h.result==='WIN'?'win':'loss')+'">'+(h.result==='WIN'?'✅ GAIN':'❌ PERTE')+'</span></span><span class="date-sm">'+new Date(h.closedAt).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+'</span></div>').join('')+'</div>'
+    +'<button class="clear-btn" onclick="clearHistory()">🗑 Effacer l\'historique</button>';
+}
+function clearHistory(){if(confirm("Effacer tout l'historique ?")){history=[];localStorage.removeItem('forex_history');syncCloud();renderHistory();updateStats()}}
+
+// ─── STATS & UI ───────────────────────────────────────────────────────────────
+function updateStats(){
+  const wins=history.filter(h=>h.result==='WIN').length,wr=history.length?Math.round((wins/history.length)*100):0,pips=history.reduce((s,h)=>s+parseFloat(h.pips||0),0);
+  document.getElementById('sActive').textContent=activeTrades.length;
+  document.getElementById('sSignals').textContent=currentSignals.length;
+  document.getElementById('sWinRate').textContent=wr+'%';
+  document.getElementById('sPips').textContent=(pips>=0?'+':'')+pips.toFixed(1);
+  document.getElementById('sHistory').textContent=history.length;
+  document.getElementById('tabActive').textContent=activeTrades.length;
+  document.getElementById('tabHist').textContent=history.length;
+  document.getElementById('sWinRateStat').className='stat '+(wr>=60?'good':wr>=40?'':'bad');
+  document.getElementById('sPipsStat').className='stat '+(pips>=0?'good':'bad');
+}
+function init(){updateStats();startCountdown();runScan();setInterval(()=>{loadCloud().then(()=>{updateStats();renderActives();renderHistory();});if(RAMCE_URL)loadRamce();if(ULT_URL)loadUltimate()},300000)}
+function showNotif(msg,type='info'){const el=document.getElementById('notif');el.textContent=msg;el.className=type;el.style.display='block';setTimeout(()=>{el.style.display='none'},5000)}
+function startCountdown(){setInterval(()=>{countdownVal=countdownVal>0?countdownVal-1:0;const m=Math.floor(countdownVal/60),s=countdownVal%60;document.getElementById('countdown').textContent=`${m}:${s.toString().padStart(2,'0')}`},1000)}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+</script>
+</body>
+</html>
