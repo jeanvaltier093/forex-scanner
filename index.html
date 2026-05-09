@@ -64,7 +64,6 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
 .empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
 .empty-icon{font-size:48px;margin-bottom:16px;opacity:.3}
 .empty-sub{font-size:13px;margin-top:8px;opacity:.6}
-/* TRADES */
 .trades-list{display:flex;flex-direction:column;gap:12px}
 .trade-row{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:10px;border-left:3px solid}
 .trade-row.buy{border-left-color:var(--buy)}.trade-row.sell{border-left-color:var(--sell)}
@@ -88,7 +87,6 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
 .pause-badge{font-size:11px;color:var(--gold);background:rgba(255,215,0,.1);padding:2px 8px;border-radius:3px}
 .close-btn{font-family:'Space Mono',monospace;font-size:10px;background:transparent;border:1px solid var(--sell);color:var(--sell);padding:5px 12px;border-radius:3px;cursor:pointer;transition:all .2s;min-height:32px}
 .close-btn:hover{background:var(--sell);color:#fff}
-/* HISTORY */
 .hist-summary{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px}
 .sum-stat{flex:1;padding:14px 12px;text-align:center;background:var(--bg2);border-right:1px solid var(--border)}
 .sum-stat:last-child{border-right:none}
@@ -105,19 +103,16 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
 .date-sm{font-size:10px;color:var(--muted)}
 .clear-btn{margin-top:14px;background:transparent;border:1px solid var(--sell);color:var(--sell);padding:10px 20px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;border-radius:4px;transition:all .2s;min-height:44px}
 .clear-btn:hover{background:var(--sell);color:white}
-/* SRV STATUS */
 .srv-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:6px;margin-bottom:14px;font-family:'Space Mono',monospace;font-size:11px}
 .srv-bar.ok{background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.2);color:var(--buy)}
 .srv-bar.err{background:rgba(255,68,102,.08);border:1px solid rgba(255,68,102,.2);color:var(--sell)}
 .srv-bar.warn{background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.2);color:var(--gold)}
 .sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--gold)}
 .sdot.ok{background:var(--buy)}.sdot.err{background:var(--sell)}
-/* INFO BOX */
 .ibox{border-radius:8px;padding:13px 15px;margin-bottom:14px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.9;color:var(--muted)}
 .ibox.u{background:var(--ult-bg);border:1px solid var(--ult-border)}
 .ibox.r{background:var(--ramce-bg2);border:1px solid var(--ramce-border)}
 .ibox strong{color:var(--text)}
-/* MODALS */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px}
 .modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:26px;max-width:460px;width:100%;max-height:90vh;overflow-y:auto}
 .modal h2{font-size:17px;font-weight:800;margin-bottom:8px}
@@ -132,7 +127,6 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
 .win-btn:hover{background:var(--buy);color:var(--bg)}
 .loss-btn{border-color:var(--sell);color:var(--sell);background:transparent}
 .loss-btn:hover{background:var(--sell);color:var(--bg)}
-/* MOBILE NAV */
 .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:2000;background:var(--bg2);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)}
 .mobile-nav-inner{display:flex}
 .mn-btn{flex:1;padding:9px 4px;background:none;border:none;color:var(--muted);font-family:'Space Mono',monospace;font-size:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:48px}
@@ -151,7 +145,6 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
 </head>
 <body>
 
-<!-- MODAL CONFIG -->
 <div class="modal-overlay" id="cfgModal" style="display:none">
   <div class="modal">
     <h2 style="color:var(--accent)">◈ CONFIGURATION</h2>
@@ -169,7 +162,6 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
   </div>
 </div>
 
-<!-- MODAL CLÔTURE -->
 <div class="modal-overlay" id="closeModal" style="display:none">
   <div class="modal">
     <h2 id="cl-title">Clôturer le trade</h2>
@@ -211,7 +203,6 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
     </button>
   </div>
 
-  <!-- PROD -->
   <div id="sec-prod">
     <div class="stats-bar">
       <div class="stat"><div class="stat-val" id="p-a">—</div><div class="stat-label">ACTIFS</div></div>
@@ -227,7 +218,6 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
     <div id="prod-historique" style="display:none"></div>
   </div>
 
-  <!-- ULTIMATE -->
   <div id="sec-ult" style="display:none">
     <div class="srv-bar warn" id="ult-srv"><div class="sdot" id="ult-dot"></div><span id="ult-srv-txt">Vérification serveur...</span></div>
     <div class="stats-bar us">
@@ -249,7 +239,6 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
     <div id="ult-historique" style="display:none"></div>
   </div>
 
-  <!-- RAMCE -->
   <div id="sec-ramce" style="display:none">
     <div class="srv-bar warn" id="ramce-srv"><div class="sdot" id="ramce-dot"></div><span id="ramce-srv-txt">Vérification serveur...</span></div>
     <div class="stats-bar rs">
@@ -287,8 +276,8 @@ const CFG = {
   prodBin:  localStorage.getItem('prod_bin')  || '69da456a36566621a8a0a91b',
   ultBin:   localStorage.getItem('ult_bin')   || '69f3bd80856a68218990a9a3',
   ramceBin: localStorage.getItem('ramce_bin') || '69f2f7d336566621a80af514',
-  ultUrl:   'https://forex-ultimate-server.onrender.com',
-  ramceUrl: 'https://forex-ramce.onrender.com',
+  ultUrl:   'https://forex-ultimate-server-4x6a.onrender.com',
+  ramceUrl: 'https://forex-ramce-hoj1.onrender.com',
 };
 const FLAGS={'EUR/USD':'🇪🇺🇺🇸','GBP/USD':'🇬🇧🇺🇸','USD/JPY':'🇺🇸🇯🇵','USD/CHF':'🇺🇸🇨🇭','AUD/USD':'🇦🇺🇺🇸','NZD/USD':'🇳🇿🇺🇸','USD/CAD':'🇺🇸🇨🇦','EUR/GBP':'🇪🇺🇬🇧'};
 let state={prod:{active:[],history:[]},ult:{active:[],history:[]},ramce:{active:[],history:[]}};
