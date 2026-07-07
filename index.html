@@ -444,8 +444,12 @@ async function loadAllBins(){
     // le serveur MEGA n'a pas de route /trade/result dediee).
     const sigEntries=Object.entries(mega.signals||{});
     const sig=sigEntries.map(([k,v])=>({...v,_fbKey:k}));
-    state.mega.active=sig.filter(s=>s.result===null||s.result===undefined).map(s=>({pair:s.pair,direction:s.direction,entryPrice:s.entry_price,tp:s.tp,sl:s.sl,reasons:s.signals_combo,addedAt:s.timestamp,reliability:Math.round((s.direction==='BUY'?0.70:0.71)*100),key:s._fbKey}));
-    state.mega.history=sig.filter(s=>s.result==='WIN'||s.result==='LOSS').map(s=>({pair:s.pair,direction:s.direction,entryPrice:s.entry_price,closePrice:s.closePrice||(s.result==='WIN'?s.tp:s.sl),result:s.result,closedAt:s.closedAt||s.timestamp,pips:s.atr?((s.result==='WIN'?2.25:-1.5)*s.atr*(s.pair&&s.pair.includes('JPY')?100:10000)).toFixed(1):0,key:s._fbKey}));
+    // La paire MEGA est encodée avec underscore (USD_JPY) côté Firebase. On
+    // la décode en slash (USD/JPY) dès ici pour que le fetch de prix live,
+    // les drapeaux et la barre de progression fonctionnent comme les autres outils.
+    const decodeMegaPair=p=>p?p.replace('_','/'):p;
+    state.mega.active=sig.filter(s=>s.result===null||s.result===undefined).map(s=>({pair:decodeMegaPair(s.pair),direction:s.direction,entryPrice:s.entry_price,tp:s.tp,sl:s.sl,reasons:s.signals_combo,addedAt:s.timestamp,reliability:Math.round((s.direction==='BUY'?0.70:0.71)*100),key:s._fbKey}));
+    state.mega.history=sig.filter(s=>s.result==='WIN'||s.result==='LOSS').map(s=>({pair:decodeMegaPair(s.pair),direction:s.direction,entryPrice:s.entry_price,closePrice:s.closePrice||(s.result==='WIN'?s.tp:s.sl),result:s.result,closedAt:s.closedAt||s.timestamp,pips:s.atr?((s.result==='WIN'?2.25:-1.5)*s.atr*(s.pair&&s.pair.includes('JPY')?100:10000)).toFixed(1):0,key:s._fbKey}));
     renderEng('mega');
     await fetchPricesForDisplay('mega');
     renderActifs('mega');
@@ -596,15 +600,26 @@ function renderHistorique(eng){
   const nightH=hist.filter(h=>{const hr=parisHour(h.addedAt||h.timestamp||h.closedAt);return hr<8||hr>=21;});
   const wrDay=dayH.length?Math.round(dayH.filter(h=>h.result==='WIN').length/dayH.length*100):null;
   const wrNight=nightH.length?Math.round(nightH.filter(h=>h.result==='WIN').length/nightH.length*100):null;
+  // MEGA: chaque paire+direction est un combo distinct, on ventile donc par
+  // paire ET direction (jusqu'à 12 lignes). Les autres outils ont un seul
+  // combo BUY/SELL universel, on garde la ventilation par paire simple.
+  const splitByDir = (eng==='mega');
   const pairMap={};
-  hist.forEach(h=>{if(!pairMap[h.pair])pairMap[h.pair]={w:0,t:0};pairMap[h.pair].t++;if(h.result==='WIN')pairMap[h.pair].w++;});
-  const pairRows=Object.entries(pairMap).sort((a,b)=>b[1].t-a[1].t).map(([pair,v])=>{
+  hist.forEach(h=>{
+    const key=splitByDir?`${h.pair}|${h.direction}`:h.pair;
+    if(!pairMap[key])pairMap[key]={w:0,t:0,pair:h.pair,dir:h.direction};
+    pairMap[key].t++;if(h.result==='WIN')pairMap[key].w++;
+  });
+  const pairRows=Object.entries(pairMap).sort((a,b)=>b[1].t-a[1].t).map(([key,v])=>{
     const w2=Math.round(v.w/v.t*100);const col=w2>=60?'var(--buy)':'var(--sell)';
-    return `<div style="display:grid;grid-template-columns:110px 50px 1fr 60px;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);font-family:'Space Mono',monospace;font-size:11px;border-left:2px solid ${col}">
-      <span>${FLAGS[pair]||''} ${pair}</span>
+    // Sous 10 trades: échantillon trop faible, on le signale visuellement.
+    const faible=v.t<10;
+    const dirBadge=splitByDir?`<span style="color:${v.dir==='BUY'?'var(--buy)':'var(--sell)'};font-weight:700">${v.dir==='BUY'?'▲':'▼'}</span> `:'';
+    return `<div style="display:grid;grid-template-columns:130px 50px 1fr 70px;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);font-family:'Space Mono',monospace;font-size:11px;border-left:2px solid ${col};${faible?'opacity:.55':''}">
+      <span>${dirBadge}${FLAGS[v.pair]||''} ${v.pair}</span>
       <span style="color:${col};font-weight:700">${w2}%</span>
       <div style="height:3px;background:${col};border-radius:2px;width:${w2}%;max-width:150px"></div>
-      <span style="color:var(--muted)">${v.w}W ${v.t-v.w}L</span>
+      <span style="color:var(--muted)">${v.w}W ${v.t-v.w}L${faible?' ⚠':''}</span>
     </div>`;}).join('');
   const color=eng==='ult'?'var(--ult)':eng==='ramce'?'var(--ramce)':eng==='vexus'?'var(--vex)':eng==='apex'?'var(--apx)':eng==='mega'?'var(--mega)':'var(--accent)';
   el.innerHTML=`
@@ -631,7 +646,7 @@ function renderHistorique(eng){
     <div style="font-size:9px;color:var(--muted);margin-top:2px">trades</div>
   </div>
 </div>
-<div style="font-family:'Space Mono',monospace;font-size:9px;color:${color};letter-spacing:2px;margin-bottom:8px">📊 WIN RATE PAR PAIRE</div>
+<div style="font-family:'Space Mono',monospace;font-size:9px;color:${color};letter-spacing:2px;margin-bottom:8px">📊 WIN RATE PAR ${splitByDir?'COMBO (PAIRE + DIRECTION)':'PAIRE'}${splitByDir?' · ⚠ = moins de 10 trades':''}</div>
 <div class="hist-table" style="margin-bottom:16px"><div>${pairRows||'<div style="padding:14px;text-align:center;color:var(--muted);font-size:12px">—</div>'}</div></div>
 <div style="font-family:'Space Mono',monospace;font-size:9px;color:${color};letter-spacing:2px;margin-bottom:8px">📋 HISTORIQUE</div>
 <div class="hist-table">
