@@ -601,26 +601,49 @@ function renderHistorique(eng){
   const wrDay=dayH.length?Math.round(dayH.filter(h=>h.result==='WIN').length/dayH.length*100):null;
   const wrNight=nightH.length?Math.round(nightH.filter(h=>h.result==='WIN').length/nightH.length*100):null;
   // MEGA: chaque paire+direction est un combo distinct, on ventile donc par
-  // paire ET direction (jusqu'à 12 lignes). Les autres outils ont un seul
-  // combo BUY/SELL universel, on garde la ventilation par paire simple.
+  // paire ET direction. Les autres outils ont un seul combo BUY/SELL universel,
+  // on garde la ventilation par paire simple.
   const splitByDir = (eng==='mega');
-  const pairMap={};
-  hist.forEach(h=>{
-    const key=splitByDir?`${h.pair}|${h.direction}`:h.pair;
-    if(!pairMap[key])pairMap[key]={w:0,t:0,pair:h.pair,dir:h.direction};
-    pairMap[key].t++;if(h.result==='WIN')pairMap[key].w++;
-  });
-  const pairRows=Object.entries(pairMap).sort((a,b)=>b[1].t-a[1].t).map(([key,v])=>{
-    const w2=Math.round(v.w/v.t*100);const col=w2>=60?'var(--buy)':'var(--sell)';
-    // Sous 10 trades: échantillon trop faible, on le signale visuellement.
-    const faible=v.t<10;
-    const dirBadge=splitByDir?`<span style="color:${v.dir==='BUY'?'var(--buy)':'var(--sell)'};font-weight:700">${v.dir==='BUY'?'▲':'▼'}</span> `:'';
-    return `<div style="display:grid;grid-template-columns:130px 50px 1fr 70px;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);font-family:'Space Mono',monospace;font-size:11px;border-left:2px solid ${col};${faible?'opacity:.55':''}">
-      <span>${dirBadge}${FLAGS[v.pair]||''} ${v.pair}</span>
-      <span style="color:${col};font-weight:700">${w2}%</span>
-      <div style="height:3px;background:${col};border-radius:2px;width:${w2}%;max-width:150px"></div>
-      <span style="color:var(--muted)">${v.w}W ${v.t-v.w}L${faible?' ⚠':''}</span>
-    </div>`;}).join('');
+  let pairRows;
+  if(splitByDir){
+    // Regroupé PAR PAIRE, avec BUY puis SELL l'un sous l'autre pour chaque
+    // paire (pas de tri global à plat qui séparerait le BUY et le SELL d'une
+    // même devise). Les paires sont triées par volume total décroissant.
+    const byPair={};
+    hist.forEach(h=>{
+      if(!byPair[h.pair])byPair[h.pair]={BUY:{w:0,t:0},SELL:{w:0,t:0},total:0};
+      const dir=h.direction==='BUY'?'BUY':'SELL';
+      byPair[h.pair][dir].t++;byPair[h.pair].total++;
+      if(h.result==='WIN')byPair[h.pair][dir].w++;
+    });
+    const mkLine=(pair,dir,v,isFirst)=>{
+      if(v.t===0)return '';
+      const w2=Math.round(v.w/v.t*100);const col=w2>=60?'var(--buy)':'var(--sell)';
+      const faible=v.t<10;
+      const dirCol=dir==='BUY'?'var(--buy)':'var(--sell)';
+      const label=isFirst?`${FLAGS[pair]||''} ${pair}`:'&nbsp;&nbsp;└';
+      return `<div style="display:grid;grid-template-columns:140px 50px 1fr 70px;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--border);font-family:'Space Mono',monospace;font-size:11px;border-left:2px solid ${col};${faible?'opacity:.55':''}">
+        <span><span style="color:var(--muted)">${label}</span> <span style="color:${dirCol};font-weight:700">${dir==='BUY'?'▲ BUY':'▼ SELL'}</span></span>
+        <span style="color:${col};font-weight:700">${w2}%</span>
+        <div style="height:3px;background:${col};border-radius:2px;width:${w2}%;max-width:150px"></div>
+        <span style="color:var(--muted)">${v.w}W ${v.t-v.w}L${faible?' ⚠':''}</span>
+      </div>`;
+    };
+    pairRows=Object.entries(byPair).sort((a,b)=>b[1].total-a[1].total).map(([pair,v])=>{
+      return mkLine(pair,'BUY',v.BUY,true)+mkLine(pair,'SELL',v.SELL,v.BUY.t===0);
+    }).join('');
+  } else {
+    const pairMap={};
+    hist.forEach(h=>{if(!pairMap[h.pair])pairMap[h.pair]={w:0,t:0};pairMap[h.pair].t++;if(h.result==='WIN')pairMap[h.pair].w++;});
+    pairRows=Object.entries(pairMap).sort((a,b)=>b[1].t-a[1].t).map(([pair,v])=>{
+      const w2=Math.round(v.w/v.t*100);const col=w2>=60?'var(--buy)':'var(--sell)';
+      return `<div style="display:grid;grid-template-columns:110px 50px 1fr 60px;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);font-family:'Space Mono',monospace;font-size:11px;border-left:2px solid ${col}">
+        <span>${FLAGS[pair]||''} ${pair}</span>
+        <span style="color:${col};font-weight:700">${w2}%</span>
+        <div style="height:3px;background:${col};border-radius:2px;width:${w2}%;max-width:150px"></div>
+        <span style="color:var(--muted)">${v.w}W ${v.t-v.w}L</span>
+      </div>`;}).join('');
+  }
   const color=eng==='ult'?'var(--ult)':eng==='ramce'?'var(--ramce)':eng==='vexus'?'var(--vex)':eng==='apex'?'var(--apx)':eng==='mega'?'var(--mega)':'var(--accent)';
   el.innerHTML=`
 <div class="hist-summary">
